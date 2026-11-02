@@ -3,10 +3,10 @@ from types import SimpleNamespace
 import pytest
 
 from app.db import connection
+from tests.fakes import poster_list
 from app.plex import client as plex
 from app.plex.client import Library, save_connection
 from app.posters.sources import PosterSource, save_source
-from app.scope import ScopeEntry, set_scope_entry
 
 
 @pytest.fixture
@@ -34,7 +34,7 @@ def test_recap(client, app, configured, monkeypatch):
     ])
     with connection(app.state.db_path) as conn:
         save_source(conn, PosterSource(None, "PP", "https://p.test/{imdb_id}.jpg", read_quality=False))
-        set_scope_entry(conn, ScopeEntry("1", "Films", "9", "Marvel"), True)
+        poster_list(conn, "9", "Marvel", library_title="Films")
 
     html = client.get("/dashboard/recap").text
     assert "Home" in html and "1,280" in html and "1,200 movies · 80 shows" in html
@@ -50,7 +50,7 @@ def test_recap_unreachable(client, configured, monkeypatch):
 
     monkeypatch.setattr(plex, "get_server", fail)
     html = client.get("/dashboard/recap").text
-    assert "unreachable" in html and "Choose what to sync" in html
+    assert "unreachable" in html and "Pick a service in a list" in html
 
 
 def test_posters_banners(client, app, configured):
@@ -58,9 +58,9 @@ def test_posters_banners(client, app, configured):
     with connection(app.state.db_path) as conn:
         save_source(conn, PosterSource(None, "PP", "https://p.test/{imdb_id}.jpg"))
     html = client.get("/posters/sync").text
-    assert "Add a poster service" not in html and "Choose collections" in html
+    assert "Add a poster service" not in html and "Go to your lists" in html
     with connection(app.state.db_path) as conn:
-        set_scope_entry(conn, ScopeEntry("1", "Films", "9", "Marvel"), True)
+        poster_list(conn, "9", "Marvel", library_title="Films")
     assert 'class="banner"' not in client.get("/posters/sync").text
     assert 'class="banner"' not in client.get("/posters/history").text
 

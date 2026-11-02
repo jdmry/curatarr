@@ -10,10 +10,11 @@
 
 </div>
 
-- **Posters**: apply posters from PostersPlus, RPDB or any image service to your collections, with quality
-  badges read from your files. Keep them up to date on a schedule, or do one title by hand.
 - **Collections**: turn MDBList, TMDB or Stremio addon lists into Plex collections, on your Home or in
-  Recommended, for everyone, only you, or one friend. Reorder your Home rows and clean up old collections.
+  Recommended, for everyone, only you, or one friend. Keep them fresh on a schedule, reorder your Home rows
+  and clean up old collections.
+- **Posters**: give each collection posters from PostersPlus, RPDB or any image service, with quality badges
+  read from your files, sent after each sync. Or do one title by hand.
 - **Safe**: a login protects every page, and a test mode shows what would change before anything is sent to Plex.
 - **Simple**: one container, set up in the web UI. No YAML.
 
@@ -41,8 +42,8 @@ Run `docker compose up -d`, open `http://<your-server>:8080` and log in. The adm
 
 1. **Settings → Plex**: your Plex URL and token.
 2. **Settings → Poster services**: add PostersPlus, RPDB or another service.
-3. **Collections**: add a list, **Preview** it, then **Sync to Plex**.
-4. **Posters**: tick its collection, **Run test**, then **Sync to Plex**.
+3. **Collections**: add a list, pick its poster service, **Preview** it, then **Sync to Plex**. Its posters
+   are sent right after.
 
 Everything else, from each tab to the environment variables, is in the [documentation](DOCUMENTATION.md).
 

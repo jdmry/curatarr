@@ -9,8 +9,8 @@
   </div>
 
   {% if not has_scope and not running %}
-  <div class="alert" style="margin-bottom:16px">{{ icon('alert') }}<div>Nothing is picked yet: choose what gets posters in
-    <a href="/posters/scope">Collections</a> first.</div></div>
+  <div class="alert" style="margin-bottom:16px">{{ icon('alert') }}<div>No list has posters yet: pick a poster service
+    in one of your <a href="/collections/lists">lists</a> first.</div></div>
   {% endif %}
   {% if error %}<div class="alert error" style="margin-bottom:16px">{{ icon('x') }}<div>{{ error }}</div></div>{% endif %}
 
@@ -51,7 +51,6 @@
     </div>
   </form>
   <p class="muted small" style="margin-top:12px">Test and sync only process this many titles, 0 means all of them.
-    Scheduled syncs always process all of them.
     A test shows what would change without touching Plex. A sync uploads the new posters: Plex keeps the old ones,
     so you can still pick them back in Plex.</p>
   {% endif %}

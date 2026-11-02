@@ -28,6 +28,8 @@ class ListConfig:
     last_error: str | None = None
     audience: str = "all"  # all, owner, or a Plex user id
     audience_name: str = ""
+    posters: bool = False  # send its collection's posters after each sync
+    poster_source_id: int | None = None  # from this service, None for the default one
 
     @property
     def private(self) -> bool:
@@ -36,12 +38,14 @@ class ListConfig:
 
 _COLUMNS = [f.name for f in fields(ListConfig)]
 _EDITABLE = ("name", "url", "library_key", "library_title", "placement", "max_items", "enabled", "audience",
-             "audience_name")
+             "audience_name", "posters", "poster_source_id")
+_FLAGS = ("enabled", "posters")
 
 
 def _row(row: sqlite3.Row) -> ListConfig:
     values = {name: row[name] for name in _COLUMNS}
-    values["enabled"] = bool(values["enabled"])
+    for name in _FLAGS:
+        values[name] = bool(values[name])
     return ListConfig(**values)
 
 

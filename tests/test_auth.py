@@ -30,8 +30,8 @@ def test_password_hash():
 
 
 def test_pages_need_a_login(anonymous):
-    response = anonymous.get("/posters/scope", follow_redirects=False)
-    assert response.status_code == 303 and response.headers["location"] == "/login?next=/posters/scope"
+    response = anonymous.get("/posters/sync", follow_redirects=False)
+    assert response.status_code == 303 and response.headers["location"] == "/login?next=/posters/sync"
     fragment = anonymous.get("/sync/card", headers={"HX-Request": "true"})
     assert fragment.headers["HX-Redirect"] == "/login?next=/sync/card" and fragment.text == ""
     assert anonymous.get("/plex/image?path=/library/metadata/1/thumb", follow_redirects=False).status_code == 303

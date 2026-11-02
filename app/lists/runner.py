@@ -14,7 +14,7 @@ from app.lists.store import ListConfig, list_lists
 from app.plex import client as plex
 from app.plex import sharing
 from app.plex.guid_index import ensure_index, forget_index
-from app.scope import ScopeEntry, list_scope, set_scope_entry
+from app.scope import ScopeEntry
 from app.settings_store import get_setting, set_setting
 from app.sync.events import EventLog
 from app.sync.runner import AlreadyRunning, SyncRunner
@@ -164,27 +164,14 @@ class ListRunner:
             self._record(conn, config, total=result.total, matched=len(wanted), collection_key=key)
             self.events.add("ok" if steps.changed else "info",
                             f"{config.name}: {summary} ({len(wanted)} of {result.total} titles)")
-            self._posters(conn, config, key)
+            if config.posters and key:
+                self._refresh.append(ScopeEntry(config.library_key, config.library_title, key, config.name,
+                                                config.poster_source_id))
         else:
             self.events.info(f"{config.name}, test: {summary} ({len(wanted)} of {result.total} titles)")
-            picked = _picked(conn, {config.collection_key} if config.collection_key else set())
-            if picked is not None and picked.refresh_posters:
-                self.events.info(f"{config.name}, test: its posters would be synced after the collection")
+            if config.posters:
+                self.events.info(f"{config.name}, test: its posters would be sent after the collection")
         return summary
-
-    def _posters(self, conn: sqlite3.Connection, config: ListConfig, key: str | None) -> None:
-        """Keep the collection's entry in Posters → Collections in step, and queue its posters."""
-        picked = _picked(conn, {k for k in (key, config.collection_key) if k})
-        if picked is None:
-            return
-        set_scope_entry(conn, picked, False)
-        if key is None:
-            return  # the collection is gone
-        entry = ScopeEntry(config.library_key, config.library_title, key, config.name, picked.source_id,
-                           picked.refresh_posters)
-        set_scope_entry(conn, entry, True)  # same entry, or renamed, or made again in Plex
-        if entry.refresh_posters:
-            self._refresh.append(entry)
 
     @staticmethod
     def _record(conn, config: ListConfig, total=None, matched=None, collection_key=None, error=None) -> None:
@@ -197,6 +184,3 @@ class ListRunner:
             (total, matched, collection_key, config.id),
         )
 
-
-def _picked(conn: sqlite3.Connection, keys: set[str]) -> ScopeEntry | None:
-    return next((e for e in list_scope(conn) if e.collection_key and e.collection_key in keys), None)

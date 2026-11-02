@@ -112,6 +112,24 @@
       </label>
     </div>
 
+    <h2 class="form-step">3. Posters</h2>
+    <div class="form-grid">
+      <label class="field">
+        <span class="field-label">Poster service</span>
+        <select name="poster_source">
+          <option value="">None, leave the posters alone</option>
+          {% if default_service %}
+          <option value="default" {{ 'selected' if config.posters and not config.poster_source_id }}>Default service ({{ default_service.name }})</option>
+          {% endif %}
+          {% for service in services if not service.is_default %}
+          <option value="{{ service.id }}" {{ 'selected' if config.posters and config.poster_source_id == service.id }}>{{ service.name }}</option>
+          {% endfor %}
+        </select>
+        <span class="field-help">Its titles get a poster from this service right after each sync of the list.
+          {% if not services %}<a href="/settings/services/new">Add a poster service</a> first.{% endif %}</span>
+      </label>
+    </div>
+
     <div class="actions" style="margin-top:20px">
       <button class="btn" type="button" hx-post="/collections/lists/preview" hx-include="#list-form"
               hx-target="#list-preview" hx-indicator="#preview-busy" hx-disabled-elt="this">{{ icon('search', 16) }}Preview</button>

@@ -7,7 +7,6 @@ from markupsafe import escape
 
 from app.scope import list_scope
 from app.sync.runner import AlreadyRunning
-from app.sync.scheduler import DEFAULT_INTERVAL, INTERVALS, load_schedule, save_schedule
 from app.web.deps import get_db, render
 
 router = APIRouter()
@@ -63,27 +62,6 @@ def start_test(request: Request, max_items: str = Form("20"), db: sqlite3.Connec
 @router.post("/sync/live")
 def start_live(request: Request, max_items: str = Form("20"), db: sqlite3.Connection = Depends(get_db)):
     return _start(request, db, "live", max_items)
-
-
-POSTERS_SCHEDULE = {"schedule_url": "/sync/schedule", "intervals": INTERVALS,
-                    "schedule_what": "the whole scope, only new or changed posters are sent."}
-
-
-@router.get("/sync/schedule")
-def schedule_card(request: Request, db: sqlite3.Connection = Depends(get_db)):
-    return render(request, "partials/schedule_card.html", schedule=load_schedule(db), **POSTERS_SCHEDULE)
-
-
-@router.post("/sync/schedule")
-def update_schedule(
-    request: Request,
-    enabled: str = Form(""),
-    every_hours: str = Form(str(DEFAULT_INTERVAL)),
-    db: sqlite3.Connection = Depends(get_db),
-):
-    hours = int(every_hours) if every_hours.isdigit() else DEFAULT_INTERVAL
-    schedule = save_schedule(db, bool(enabled), hours)
-    return render(request, "partials/schedule_card.html", schedule=schedule, saved=True, **POSTERS_SCHEDULE)
 
 
 @router.post("/sync/cancel")

@@ -2,6 +2,6 @@
 
 APP_NAME = "Curatarr"
 APP_SLUG = "curatarr"
-APP_VERSION = "0.3.0"
+APP_VERSION = "0.4.0"
 REPO = "jdmry/curatarr"
 REPO_URL = f"https://github.com/{REPO}"

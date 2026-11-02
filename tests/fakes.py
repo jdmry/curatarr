@@ -197,3 +197,14 @@ class FakeServer:
     def fetchItems(self, path):
         keys = path.rsplit("=", 1)[1].split(",") if "?id=" in path else path.rsplit("/", 1)[1].split(",")
         return [i for s in self._sections for i in s.items if str(i.ratingKey) in keys]
+
+
+def poster_list(conn, collection_key, name, library_key="1", library_title="Movies", source_id=None) -> int:
+    """A synced list whose collection gets posters."""
+    from app.lists.store import ListConfig, save_list
+
+    list_id = save_list(conn, ListConfig(None, name, "https://mdblist.com/lists/u/x", library_key, library_title,
+                                         posters=True, poster_source_id=source_id))
+    conn.execute("UPDATE lists SET collection_key = ? WHERE id = ?", (collection_key, list_id))
+    return list_id
+

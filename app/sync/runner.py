@@ -121,7 +121,7 @@ class SyncRunner:
             return "failed", "Plex is not configured."
         entries = only or list_scope(conn)
         if not entries:
-            return "failed", "Nothing is picked in Posters → Collections."
+            return "failed", "No list has posters yet: pick a poster service in a list."
         sources = {s.id: s for s in list_sources(conn)}
         default = get_default_source(conn)
         state = dict(conn.execute("SELECT rating_key, fingerprint FROM poster_state").fetchall())

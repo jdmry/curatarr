@@ -38,6 +38,7 @@
       <span class="badge {{ 'accent' if list.placement == 'home' }}">{{ placements[list.placement] }}</span>
       {% if list.audience == 'owner' %}<span class="badge">{{ icon('lock', 12) }}Only me</span>
       {% elif list.private %}<span class="badge">{{ icon('lock', 12) }}Only {{ list.audience_name }}</span>{% endif %}
+      {% if list.posters %}<span class="badge">{{ icon('image', 12) }}{{ poster_services.get(list.poster_source_id) or default_service or 'No service' }}</span>{% endif %}
       {% if list.collection_key %}<span class="badge ok"><span class="dot"></span>In Plex</span>{% endif %}
       {% if not list.enabled %}<span class="badge"><span class="dot"></span>Off</span>{% endif %}
     </div>

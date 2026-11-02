@@ -2,8 +2,8 @@
 
 - [Install](#install)
 - [Getting started](#getting-started)
-- [Posters](#posters)
 - [Collections](#collections)
+- [Posters](#posters)
 - [How it works](#how-it-works)
 - [Configuration](#configuration)
 - [Development](#development)
@@ -75,45 +75,11 @@ Log in with the admin account (see [Login](#login)), then:
    [Plex token](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/).
    **Test connection** checks them without saving.
 2. **Settings → Poster services**: add one (see below).
-3. **Collections → Lists**: add a list, **Preview** it, save, then **Sync to Plex**.
-4. **Posters → Collections**: tick the collections that get posters.
-5. **Posters → Auto sync**: **Run test** on a few titles, check, then **Sync to Plex**.
+3. **Collections → Lists**: add a list and pick its poster service, **Preview** it, save, then **Sync to
+   Plex**. Its posters are sent right after.
 
 In **Settings → Plex**, untick the libraries you don't use: they disappear from the app (lists, searches,
 dashboard). Nothing changes in Plex.
-
-## Posters
-
-### Poster services
-
-Add a service in **Settings → Poster services** by picking its type first.
-
-| Type | What you give |
-|---|---|
-| **PostersPlus** | The URL from its configurator (**Copy config**). It's adapted for Plex: the client is set to Plex and the quality is read from your files (`NONE` when nothing is detected, so PostersPlus never guesses it). |
-| **RPDB** | Your API key, a style, a size and a language. The URL is built for you; titles are looked up by IMDb id. |
-| **Other image URL** | A URL with placeholders such as `{imdb_id}`, `{tmdb_id}`, `{type}` or `{quality}` (same syntax as AIOMetadata poster patterns, including optional `{name?}`). |
-
-Search any title of your library to preview its poster before saving; nothing is sent to Plex. Keys in
-URLs and header values are hidden in the interface and the logs.
-
-If your posters don't show quality badges, untick **Read quality from files**: reading it costs one Plex
-request per title, so syncs get much faster without it.
-
-The default service is used everywhere, unless a collection picks another one.
-
-### Tabs
-
-| Tab | What it does |
-|---|---|
-| **Collections** | The collections made by your lists. Tick the ones that get posters, each with the default service or another one. **Sync posters on each collection sync** sends their posters right after each sync of the list. A title in several ticked collections is processed once. Whole libraries can't be picked: a sync would read every title of the library each time. |
-| **Auto sync** | **Run test** shows what would change, live, without touching Plex. **Sync to Plex** sends the new posters. Both only process the number of titles you enter (0 = all). Set a schedule (every 1, 3, 6, 12 or 24 hours) to keep them up to date: scheduled syncs process all titles. |
-| **Manual** | Find any movie or show, compare its current poster with the new one, and apply it. |
-| **History** | Every sync, with what was (or would be) changed for each title. |
-
-A title is only sent again when its poster would change (other quality, edited URL, other service) or when
-Plex replaced it (Fix Match, poster reset): uploaded posters are locked in Plex, and an unlocked one is sent
-again. Plex keeps the previous posters, so you can always switch back in Plex.
 
 ## Collections
 
@@ -135,13 +101,18 @@ again. Plex keeps the previous posters, so you can always switch back in Plex.
 - **Who sees it**: everyone, only you, or one friend (see below).
 - **Max titles**: the collection keeps the first titles of the list that you have, up to this number.
 
+**3. Posters**
+
+- **Poster service**: none, the default service or another one. Its titles get their posters right after each
+  sync of the list, the first one included. A title in several collections is processed once.
+
 **Preview** shows which titles of the list you have and which are missing.
 
 ### Tabs
 
 | Tab | What it does |
 |---|---|
-| **Lists** | Your lists. A saved list is only created in Plex by its first sync. **Run test** shows what each collection would get; **Sync to Plex** (or **Sync** on one list) creates or updates them, in the list's order, with each step shown in Activity. Schedule it (every 1 to 24 hours, separately from posters) to keep them fresh. |
+| **Lists** | Your lists. A saved list is only created in Plex by its first sync. **Run test** shows what each collection would get; **Sync to Plex** (or **Sync** on one list) creates or updates them, in the list's order, then sends their posters, with each step shown in Activity. Schedule it (every 1 to 24 hours) to keep collections and posters fresh. |
 | **Home order** | The rows of each library, top first, as in Plex's *Manage Recommendations*. Move them with the arrows. |
 | **Clean up** | Every collection in your libraries and who made it. Delete the ones no list keeps, like old Agregarr ones; their titles stay in Plex. |
 
@@ -155,6 +126,42 @@ Plex has no per-person collections. For **Only me** or **Only &lt;a friend&gt;**
 other restrictions, including labels set by hand or by other tools, are kept, and only friends whose
 restrictions actually change are updated. A test sync lists those changes without making them. You always
 see everything.
+
+## Posters
+
+Posters go to the collections made by your lists: pick a poster service in a list (see
+[Adding a list](#adding-a-list)), and its titles get their posters right after each sync of the list.
+Whole libraries are left alone: a sync would have to read every title of the library each time.
+
+### Poster services
+
+Add a service in **Settings → Poster services** by picking its type first.
+
+| Type | What you give |
+|---|---|
+| **PostersPlus** | The URL from its configurator (**Copy config**). It's adapted for Plex: the client is set to Plex and the quality is read from your files (`NONE` when nothing is detected, so PostersPlus never guesses it). |
+| **RPDB** | Your API key, a style, a size and a language. The URL is built for you; titles are looked up by IMDb id. |
+| **Other image URL** | A URL with placeholders such as `{imdb_id}`, `{tmdb_id}`, `{type}` or `{quality}` (same syntax as AIOMetadata poster patterns, including optional `{name?}`). |
+
+Search any title of your library to preview its poster before saving; nothing is sent to Plex. Keys in
+URLs and header values are hidden in the interface and the logs.
+
+If your posters don't show quality badges, untick **Read quality from files**: reading it costs one Plex
+request per title, so syncs get much faster without it.
+
+Each list picks its poster service: the default one or another.
+
+### Tabs
+
+| Tab | What it does |
+|---|---|
+| **Sync** | Posters are sent after each sync of a list, so this is for checking or catching up: **Run test** shows what would change, live, without touching Plex; **Sync to Plex** sends the new posters of every list that has a service. Both only process the number of titles you enter (0 = all). |
+| **Manual** | Find any movie or show, compare its current poster with the new one, and apply it. |
+| **History** | Every sync, with what was (or would be) changed for each title. |
+
+A title is only sent again when its poster would change (other quality, edited URL, other service) or when
+Plex replaced it (Fix Match, poster reset): uploaded posters are locked in Plex, and an unlocked one is sent
+again. Plex keeps the previous posters, so you can always switch back in Plex.
 
 ## How it works
 
@@ -187,7 +194,7 @@ Everything is set up in the web UI. Only the admin account variables are needed,
 | Tag | What it is |
 |---|---|
 | `latest` | The latest release. |
-| `0.3.0`, `0.3` | A given release. |
+| `0.4.0`, `0.4` | A given release. |
 | `edge` | The latest commit on `main`. May break. |
 
 Images are built for `linux/amd64` and `linux/arm64`.

@@ -1,6 +1,5 @@
 {% set intros = {
-  "scope": "Step 1: pick the collections that get posters, and the service each one uses.",
-  "sync": "Sends a poster to every title of the collections picked. Run a test first, then sync now or on a schedule.",
+  "sync": "Posters are sent after each sync of a list that has a poster service. Resync them all here, or run a test.",
   "titles": "One title at a time: find a movie or show, preview its new poster, send it to Plex.",
   "history": "What each sync did, title by title.",
 } %}
@@ -10,6 +9,6 @@
     <p class="subtitle">{{ intros[tab] }}</p>
   </div>
 </header>
-{% with tabs = [("scope", "/posters/scope", "Collections"), ("sync", "/posters/sync", "Auto sync"), ("titles", "/posters/titles", "Manual"), ("history", "/posters/history", "History")] %}
+{% with tabs = [("sync", "/posters/sync", "Sync"), ("titles", "/posters/titles", "Manual"), ("history", "/posters/history", "History")] %}
   {% include "partials/tabs.html" %}
 {% endwith %}

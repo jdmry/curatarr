@@ -136,3 +136,23 @@ def test_hidden_libraries(client, app, server):
     client.post("/settings/plex/libraries", data={"shown": "1"})
     assert '<option value="1"' in client.get("/collections/lists/new").text
 
+
+def test_form_saves_the_poster_service(client, app, server):
+    from app.posters.sources import PosterSource, save_source
+
+    with connection(app.state.db_path) as conn:
+        save_source(conn, PosterSource(None, "PP", "https://p.test/{imdb_id}.jpg"))
+        rpdb = save_source(conn, PosterSource(None, "RPDB", "https://r.test/{imdb_id}.jpg"))
+    page = client.get("/collections/lists/new").text
+    assert "3. Posters" in page and "Default service (PP)" in page and f'value="{rpdb}"' in page
+
+    client.post("/collections/lists", data={**FORM, "poster_source": str(rpdb)})
+    client.post("/collections/lists", data={**FORM, "name": "Plain"})
+    with connection(app.state.db_path) as conn:
+        first, plain = list_lists(conn)
+    assert (first.posters, first.poster_source_id) == (True, rpdb) and not plain.posters
+
+    client.post(f"/collections/lists/{first.id}", data={**FORM, "poster_source": "default"})
+    with connection(app.state.db_path) as conn:
+        assert (list_lists(conn)[0].posters, list_lists(conn)[0].poster_source_id) == (True, None)
+

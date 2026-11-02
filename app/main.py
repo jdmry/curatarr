@@ -17,7 +17,7 @@ from app.sync.events import EventLog
 from app.sync.runner import SyncRunner, mark_interrupted_runs
 from app.sync.scheduler import LISTS_SCHEDULE, Scheduler
 from app.updates import UpdateCheck
-from app.web import auth, collections, dashboard, plex_images, scope, settings, sources, sync, titles
+from app.web import auth, collections, dashboard, plex_images, settings, sources, sync, titles
 from app.web.assets import asset
 from app.web.formatting import ago, duration, until
 from app.web.icons import icon
@@ -52,15 +52,12 @@ def create_app(env: Env | None = None) -> FastAPI:
         app.state.events = EventLog()
         app.state.runner = SyncRunner(app.state.db_path, app.state.events)
         app.state.list_runner = ListRunner(app.state.db_path, app.state.events, app.state.runner)
-        app.state.scheduler = Scheduler(app.state.db_path, app.state.runner, app.state.events)
-        app.state.scheduler.start()
         app.state.list_scheduler = Scheduler(app.state.db_path, app.state.list_runner, app.state.events,
                                              prefix=LISTS_SCHEDULE, label="collections sync")
         app.state.list_scheduler.start()
         async with httpx.AsyncClient(timeout=30, follow_redirects=True) as http:
             app.state.http = http
             yield
-        app.state.scheduler.stop()
         app.state.list_scheduler.stop()
 
     app = FastAPI(title=APP_NAME, version=APP_VERSION, docs_url=None, redoc_url=None, lifespan=lifespan)
@@ -81,7 +78,7 @@ def create_app(env: Env | None = None) -> FastAPI:
     app.include_router(auth.router)
     app.include_router(auth.account)
     login = [Depends(auth.require_login)]
-    for module in (dashboard, settings, sources, scope, sync, titles, collections, plex_images):
+    for module in (dashboard, settings, sources, sync, titles, collections, plex_images):
         app.include_router(module.router, dependencies=login)
 
     @app.get("/health")

@@ -23,7 +23,7 @@ def banners_for(db_path: Path, page: str) -> list[Banner]:
             if conn.execute("SELECT 1 FROM poster_sources LIMIT 1").fetchone() is None:
                 result.append(Banner("Add a poster service: it's where posters come from.",
                                      "/settings/services/new", "Add a poster service"))
-            elif page == "posters/sync" and conn.execute("SELECT 1 FROM scope LIMIT 1").fetchone() is None:
-                result.append(Banner("No collection is picked yet. Choose the collections that get posters.",
-                                     "/posters/scope", "Choose collections"))
+            elif page == "posters/sync" and conn.execute("SELECT 1 FROM lists WHERE posters = 1").fetchone() is None:
+                result.append(Banner("No list has posters yet. Pick a poster service in a list.",
+                                     "/collections/lists", "Go to your lists"))
         return result

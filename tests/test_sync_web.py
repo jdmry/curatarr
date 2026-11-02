@@ -4,8 +4,8 @@ from app.db import connection
 from app.plex import client as plex
 from app.plex.client import save_connection
 from app.posters.sources import PosterSource, save_source
-from app.scope import ScopeEntry, list_scope, set_scope_entry
-from tests.fakes import FakeCollection, FakeSection, FakeServer, title
+from app.scope import ScopeEntry
+from tests.fakes import FakeCollection, FakeSection, FakeServer, poster_list, title
 
 
 @pytest.fixture
@@ -14,9 +14,10 @@ def server(app, monkeypatch):
     movies.items.append(title(99, "No imdb", tmdb="5"))
     shows = FakeSection(2, "Shows", type="show", items=[title(50, "Show", TYPE="show", imdb="tt50")])
     music = FakeSection(3, "Music", type="artist")
-    collection = FakeCollection(10, "Marvel", movies.items[:2])
+    collection = FakeCollection(10, "Marvel", list(movies.items))
+    tv = FakeCollection(20, "TV", list(shows.items), section_key=2)
     movies._collections = [collection]
-    fake = FakeServer([movies, shows, music], [collection])
+    fake = FakeServer([movies, shows, music], [collection, tv])
     monkeypatch.setattr(plex, "connect", lambda conn: fake)
     monkeypatch.setattr(plex, "get_server", lambda conn: fake)
     with connection(app.state.db_path) as conn:
@@ -29,9 +30,10 @@ def add_source(app):
         return save_source(conn, PosterSource(None, "PP", "https://p.test/{imdb_id}.jpg?k=1"))
 
 
-def test_scope_page_without_lists(client, server):
-    html = client.get("/posters/scope").text
-    assert "No collection yet" in html and "Add a poster service" in html
+def test_posters_page_without_lists(client, server):
+    assert "Add a poster service" in client.get("/posters/sync").text
+    add_source(app=client.app)
+    assert "No list has posters yet" in client.get("/sync/card").text
 
 
 def run_test(client, app, mode="test", **data):
@@ -46,13 +48,13 @@ def run_test(client, app, mode="test", **data):
 def test_test_sync_needs_scope(client, app, server):
     add_source(app)
     run, items = run_test(client, app)
-    assert run["status"] == "failed" and "Collections" in run["error"]
+    assert run["status"] == "failed" and "poster service in a list" in run["error"]
 
 
 def test_test_sync_runs(client, app, server):
     add_source(app)
     with connection(app.state.db_path) as conn:
-        set_scope_entry(conn, ScopeEntry("1", "Movies"), True)
+        poster_list(conn, "10", "Marvel")
     run, items = run_test(client, app, max_items="0")
     assert run["status"] == "done" and run["mode"] == "test"
     assert (run["total"], run["applied"], run["skipped"], run["errors"]) == (6, 5, 1, 0)
@@ -77,7 +79,7 @@ def test_live_sync_uploads_and_remembers(client, app, server, monkeypatch):
 
     add_source(app)
     with connection(app.state.db_path) as conn:
-        set_scope_entry(conn, ScopeEntry("1", "Movies"), True)
+        poster_list(conn, "10", "Marvel")
     fetched = []
 
     def fake_fetch(url, *args):
@@ -109,7 +111,7 @@ def test_live_sync_upload_error(client, app, server, monkeypatch):
 
     add_source(app)
     with connection(app.state.db_path) as conn:
-        set_scope_entry(conn, ScopeEntry("2", "Shows"), True)
+        poster_list(conn, "20", "TV", "2", "Shows")
     monkeypatch.setattr(fetch, "fetch_poster", lambda *a: FetchResult(True, content=b"img", status=200))
     show = server._sections[1].items[0]
     show.uploadPoster = lambda **kw: (_ for _ in ()).throw(RuntimeError("(400) bad_request"))
@@ -117,15 +119,6 @@ def test_live_sync_upload_error(client, app, server, monkeypatch):
     assert run["errors"] == 1 and "Upload to Plex failed" in items[0]["reason"]
     with connection(app.state.db_path) as conn:
         assert conn.execute("SELECT COUNT(*) FROM poster_state").fetchone()[0] == 0
-
-
-def test_schedule_card(client, app):
-    html = client.get("/sync/schedule").text
-    assert "Paused" in html and "Turn on" in html
-    html = client.post("/sync/schedule", data={"enabled": "1", "every_hours": "3"}).text
-    assert "Every 3 h" in html and "Next sync in 2 h 59 min" in html and "Pause" in html
-    html = client.post("/sync/schedule", data={"enabled": "", "every_hours": "3"}).text
-    assert "Paused" in html and 'value="3" selected' in html
 
 
 def test_activity_stream_starts_after_rendered_lines(client, app):
@@ -139,13 +132,15 @@ def test_activity_stream_starts_after_rendered_lines(client, app):
 def test_sync_of_some_collections_only(client, app, server):
     add_source(app)
     with connection(app.state.db_path) as conn:
-        set_scope_entry(conn, ScopeEntry("1", "Movies"), True)
-    app.state.runner.start("test", only=[ScopeEntry("1", "Movies", "10", "Marvel")])
+        poster_list(conn, "10", "Marvel")
+    marvel = FakeCollection(11, "Marvel 2", server._sections[0].items[:2])
+    server._collections[11] = marvel
+    app.state.runner.start("test", only=[ScopeEntry("1", "Movies", "11", "Marvel 2")])
     app.state.runner.wait(10)
     with connection(app.state.db_path) as conn:
         run = conn.execute("SELECT * FROM runs ORDER BY id DESC").fetchone()
     assert run["status"] == "done" and run["total"] == 2
-    assert any("titles of Marvel" in line.message for line in app.state.events.tail(10))
+    assert any("titles of Marvel 2" in line.message for line in app.state.events.tail(10))
 
 
 def test_title_is_tried_again_once_when_plex_times_out(client, app, server, monkeypatch):
@@ -155,7 +150,7 @@ def test_title_is_tried_again_once_when_plex_times_out(client, app, server, monk
 
     add_source(app)
     with connection(app.state.db_path) as conn:
-        set_scope_entry(conn, ScopeEntry("1", "Movies"), True)
+        poster_list(conn, "10", "Marvel")
     calls = {}
     real = runner.evaluate
 

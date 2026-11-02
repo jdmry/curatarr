@@ -16,7 +16,7 @@ from app.lists.store import PLACEMENTS, ListConfig, delete_list, get_list, list_
 from app.plex import client as plex
 from app.plex import sharing
 from app.plex.guid_index import ensure_index
-from app.scope import list_scope, set_scope_entry
+from app.posters.sources import get_default_source, list_sources
 from app.secrets import MASK
 from app.settings_store import get_setting
 from app.sync.runner import AlreadyRunning
@@ -40,6 +40,7 @@ class ListForm:
     placement: str
     max_items: int
     audience: str
+    poster_source: str = ""  # "" for no posters, "default", or a service id
 
 
 SOURCES = {"mdblist": "MDBList", "tmdb": "TMDB", "stremio": "Stremio addon"}
@@ -92,6 +93,7 @@ def list_form(
     placement: str = Form("home"),
     max_items: str = Form("50"),
     audience: str = Form("all"),
+    poster_source: str = Form(""),
     db: sqlite3.Connection = Depends(get_db),
 ) -> ListForm:
     if source in SOURCES:
@@ -101,7 +103,7 @@ def list_form(
         url = list_url(source, {k: v.strip() for k, v in fields.items()}, saved.url if saved else "")
     count = int(max_items) if max_items.strip().isdigit() else 50
     return ListForm(url.strip(), name.strip(), library_key, placement if placement in PLACEMENTS else "home",
-                    max(1, min(count, 500)), audience.strip() or "all")
+                    max(1, min(count, 500)), audience.strip() or "all", poster_source)
 
 
 def _audiences(db: sqlite3.Connection) -> tuple[list[tuple[str, str]], str | None]:
@@ -147,6 +149,7 @@ def _form_page(request: Request, db: sqlite3.Connection, config: ListConfig, err
         libraries=_libraries(db), placements=PLACEMENTS, presets=sources.PRESETS, error=error,
         has_tmdb_key=bool(get_setting(db, "tmdb.key")), audiences=audiences, audience_error=audience_error,
         has_mdblist_key=bool(get_setting(db, "mdblist.key")), list_sources=SOURCES, fields=source_fields(config.url),
+        services=list_sources(db), default_service=get_default_source(db),
     )
 
 
@@ -191,8 +194,11 @@ def collections_root():
 
 def _panel_context(request: Request, db: sqlite3.Connection) -> dict:
     runner = request.app.state.list_runner
+    default = get_default_source(db)
+    services = {s.id: s.name for s in list_sources(db)}
     return {"lists": list_lists(db), "placements": PLACEMENTS, "running": runner.running, "mode": runner.mode,
-            "progress": runner.progress, "results": runner.results}
+            "progress": runner.progress, "results": runner.results,
+            "poster_services": services, "default_service": default.name if default else None}
 
 
 @router.get("/collections/lists")
@@ -271,6 +277,10 @@ def preview(request: Request, form: ListForm = Depends(list_form), db: sqlite3.C
 def _save(request: Request, db: sqlite3.Connection, list_id: int | None, form: ListForm):
     config = ListConfig(list_id, form.name, form.url, form.library_key, "", form.placement, form.max_items,
                         audience=form.audience)
+    services = {s.id for s in list_sources(db)}
+    if form.poster_source == "default" or (form.poster_source.isdigit() and int(form.poster_source) in services):
+        config.posters = True
+        config.poster_source_id = int(form.poster_source) if form.poster_source.isdigit() else None
     labels = dict(_audiences(db)[0])
     if form.audience not in labels:
         saved = get_list(db, list_id) if list_id else None
@@ -327,9 +337,6 @@ def remove_list(request: Request, list_id: int, db: sqlite3.Connection = Depends
         except Exception as exc:
             plex.forget_server()
             request.app.state.events.add("error", f"{config.name}: {plex.describe_error(exc, connection)}")
-    for entry in list_scope(db):
-        if config.collection_key and entry.collection_key == config.collection_key:
-            set_scope_entry(db, entry, False)
     delete_list(db, list_id)
     return RedirectResponse("/collections/lists", status_code=303)
 

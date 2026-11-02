@@ -10,7 +10,7 @@ from app.plex import client as plex
 from app.plex.client import save_connection
 from app.plex.guid_index import ensure_index, forget_index
 from app.posters.sources import PosterSource, save_source
-from app.scope import ScopeEntry, list_scope, set_scope_entry
+from app.scope import ScopeEntry, list_scope
 from tests.fakes import FakeCollection, FakeSection, FakeServer, title
 
 MOVIES = [title(i, f"M{i}", imdb=f"tt{i}") for i in range(1, 7)]
@@ -127,7 +127,6 @@ def test_live_sync_then_unchanged_then_delete(client, app, plex_server):
     assert collection.deleted
 
 
-
 def test_sync_reports_progress(client, app, plex_server):
     with connection(app.state.db_path) as conn:
         save_list(conn, config(id=None, name="Second", max_items=2))
@@ -148,48 +147,27 @@ class FakePosters:
         self.calls.append((mode, only))
 
 
-def test_picked_collection_follows_its_list_and_gets_posters(client, app, plex_server):
+def test_list_with_posters_sends_them_after_each_sync(client, app, plex_server):
     posters = app.state.list_runner.posters = FakePosters()
-    saved = run(client, app, "live")
-    assert posters.calls == []
     with connection(app.state.db_path) as conn:
         rpdb = save_source(conn, PosterSource(None, "RPDB", "https://r.test/{imdb_id}.jpg"))
-        set_scope_entry(conn, ScopeEntry("1", "Movies", saved.collection_key, "Top", rpdb, True), True)
-        save_list(conn, config(id=1, name="Renamed", max_items=2))
+        save_list(conn, config(id=1, max_items=2, posters=True, poster_source_id=rpdb))
 
     run(client, app, "test")
     assert posters.calls == []
-    assert any("posters would be synced" in line.message for line in app.state.events.tail(10))
+    assert any("posters would be sent" in line.message for line in app.state.events.tail(10))
 
-    run(client, app, "live")
-    entry = ScopeEntry("1", "Movies", saved.collection_key, "Renamed", rpdb, True)
+    saved = run(client, app, "live")  # the first sync too
+    entry = ScopeEntry("1", "Movies", saved.collection_key, "Top", rpdb)
+    assert posters.calls == [("live", [entry])]
     with connection(app.state.db_path) as conn:
         assert list_scope(conn) == [entry]
-    assert posters.calls == [("live", [entry])]
+    assert "RPDB" in client.get("/collections/panel").text
 
     client.post("/collections/lists/1/delete")
     with connection(app.state.db_path) as conn:
         assert list_scope(conn) == []
 
-
-def test_poster_scope_is_list_collections_only(client, app, plex_server):
-    assert "No collection yet" in client.get("/posters/scope").text
-    saved = run(client, app, "live")
-    page = client.get("/posters/scope").text
-    assert "Top" in page and "Movies" in page and "Sync posters on each collection sync" in page
-
-    data = {"library_key": "1", "library_title": "Movies", "collection_key": saved.collection_key,
-            "collection_title": "Top", "enabled": "1", "refresh_posters": "1"}
-    row = client.post("/posters/scope/entry", data=data).text
-    assert 'class="scope-row on"' in row and 'hx-target="this"' in row
-    with connection(app.state.db_path) as conn:
-        assert list_scope(conn) == [ScopeEntry("1", "Movies", saved.collection_key, "Top", None, True)]
-    for other in ({**data, "collection_key": ""}, {**data, "collection_key": "999"}):
-        assert client.post("/posters/scope/entry", data=other).status_code == 400
-
-    with connection(app.state.db_path) as conn:
-        conn.execute("INSERT INTO settings (key, value) VALUES ('plex.hidden_libraries', '[\"1\"]')")
-    assert "No collection yet" in client.get("/posters/scope").text
 
 class FakeManagedHub:
     def __init__(self, hubs, identifier, title, home=False):
@@ -257,7 +235,6 @@ def test_lists_schedule_card(client, app, plex_server):
     assert 'hx-get="/collections/schedule"' in client.get("/collections/lists").text
     html = client.post("/collections/schedule", data={"enabled": "1", "every_hours": "12"}).text
     assert "Every 12 h" in html and 'hx-post="/collections/schedule"' in html and "every list is synced" in html
-    assert "Paused" in client.get("/sync/schedule").text  # posters schedule untouched
 
 
 def test_private_list_hides_collection_from_other_friends(client, app, plex_server, monkeypatch):
@@ -351,8 +328,7 @@ def test_poster_sync_starts_after_the_writes_are_saved(client, app, plex_server,
     app.state.list_runner.posters = WritingPosters()
     saved = run(client, app, "live")
     with connection(app.state.db_path) as conn:
-        set_scope_entry(conn, ScopeEntry("1", "Movies", saved.collection_key, "Top", None, True), True)
-        conn.execute("UPDATE lists SET audience = 'owner'")  # the friends' step then saves a setting
+        conn.execute("UPDATE lists SET posters = 1, audience = 'owner'")  # the friends' step then saves a setting
     run(client, app, "live")
     assert starts == ["live"]
     assert not any("failed" in line.message for line in app.state.events.tail(20))
