@@ -510,6 +510,8 @@ input:focus, select:focus, textarea:focus, .btn:focus-visible {
 .scope-row .check { align-items: center; flex: 1; min-width: 200px; }
 .scope-row select { width: auto; min-width: 220px; height: 34px; }
 .scope-row select:disabled { opacity: .45; }
+.scope-row .scope-refresh { flex-basis: 100%; min-width: 0; padding-left: 26px; }
+.scope-row .scope-refresh:has(:disabled) { opacity: .45; }
 .collections { margin-top: 10px; max-height: 480px; overflow-y: auto; }
 .collections .filter { margin-bottom: 10px; }
 .collections .spinner { display: inline-block; vertical-align: -2px; margin-right: 6px; }

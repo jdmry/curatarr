@@ -16,7 +16,7 @@ from app import db
 from app.plex import client as plex
 from app.posters import fetch
 from app.posters.sources import get_default_source, list_sources
-from app.scope import list_scope
+from app.scope import ScopeEntry, list_scope
 from app.secrets import mask
 from app.sync.engine import Outcome, Target, collect_targets, evaluate, remember, upload
 from app.sync.events import EventLog
@@ -62,8 +62,10 @@ class SyncRunner:
         return self._thread is not None and self._thread.is_alive()
 
     def start(
-        self, mode: str = "test", max_items: int | None = None, scheduled: bool = False
+        self, mode: str = "test", max_items: int | None = None, scheduled: bool = False,
+        only: list[ScopeEntry] | None = None,
     ) -> int:
+        """Sync the titles picked in Posters → Libraries, or only those of `only`."""
         with self._lock:
             if self.running:
                 raise AlreadyRunning()
@@ -78,7 +80,7 @@ class SyncRunner:
                 self.run_id = cursor.lastrowid
             self._cancel.clear()
             self._thread = threading.Thread(
-                target=self._run, args=(self.run_id, mode, max_items), name="sync", daemon=True
+                target=self._run, args=(self.run_id, mode, max_items, only), name="sync", daemon=True
             )
             self._thread.start()
             return self.run_id
@@ -90,11 +92,11 @@ class SyncRunner:
         if self._thread:
             self._thread.join(timeout)
 
-    def _run(self, run_id: int, mode: str, max_items: int | None) -> None:
+    def _run(self, run_id: int, mode: str, max_items: int | None, only: list[ScopeEntry] | None = None) -> None:
         name = "Test sync" if mode == "test" else "Sync"
         conn = db.open_db(self.db_path)
         try:
-            status, error = self._process(conn, run_id, mode, max_items)
+            status, error = self._process(conn, run_id, mode, max_items, only)
         except Exception as exc:
             log.exception("Sync failed")
             status, error = "failed", f"{type(exc).__name__}: {exc}"
@@ -107,12 +109,15 @@ class SyncRunner:
         conn.commit()
         conn.close()
 
-    def _process(self, conn: sqlite3.Connection, run_id: int, mode: str, max_items: int | None):
+    def _process(
+        self, conn: sqlite3.Connection, run_id: int, mode: str, max_items: int | None,
+        only: list[ScopeEntry] | None = None,
+    ):
         live = mode == "live"
         connection = plex.load_connection(conn)
         if connection is None:
             return "failed", "Plex is not configured."
-        entries = list_scope(conn)
+        entries = only or list_scope(conn)
         if not entries:
             return "failed", "Nothing is picked in Posters → Libraries."
         sources = {s.id: s for s in list_sources(conn)}
@@ -120,6 +125,8 @@ class SyncRunner:
         state = dict(conn.execute("SELECT rating_key, fingerprint FROM poster_state").fetchall())
 
         limit = f"first {max_items} titles" if max_items else "all titles"
+        if only:
+            limit = f"titles of {', '.join(entry.collection_title for entry in only)}"
         if live:
             self.events.info(f"Sync started ({limit})")
         else:

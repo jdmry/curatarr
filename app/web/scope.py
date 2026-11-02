@@ -3,6 +3,7 @@ import sqlite3
 from fastapi import APIRouter, Depends, Form, Request
 
 from app.plex import client as plex
+from app.lists.store import list_lists
 from app.posters.sources import get_default_source, list_sources
 from app.scope import ScopeEntry, list_scope, set_scope_entry
 from app.web.deps import get_db, render
@@ -56,6 +57,7 @@ def scope_collections(request: Request, library_key: str, db: sqlite3.Connection
         plex.forget_server()
         return render(request, "scope/collections.html", error=plex.describe_error(exc, connection))
     selected = {e.collection_key: e for e in list_scope(db) if e.library_key == library_key and not e.is_library}
+    linked = {c.collection_key for c in list_lists(db) if c.collection_key}
     collections.sort(key=lambda c: (str(c.ratingKey) not in selected, c.title.casefold()))
     return render(
         request,
@@ -63,6 +65,7 @@ def scope_collections(request: Request, library_key: str, db: sqlite3.Connection
         section=section,
         collections=collections,
         selected=selected,
+        linked_keys=linked,
         **_source_context(db),
     )
 
@@ -76,11 +79,15 @@ def update_entry(
     collection_title: str = Form(""),
     enabled: str = Form(""),
     source_id: str = Form(""),
+    refresh_posters: str = Form(""),
+    linked: str = Form(""),
     count: str = Form(""),
     db: sqlite3.Connection = Depends(get_db),
 ):
     entry = ScopeEntry(
-        library_key, library_title, collection_key, collection_title, int(source_id) if source_id.isdigit() else None
+        library_key, library_title, collection_key, collection_title, int(source_id) if source_id.isdigit() else None,
+        bool(linked and refresh_posters),
     )
     set_scope_entry(db, entry, bool(enabled))
-    return render(request, "scope/row.html", entry=entry, enabled=bool(enabled), count=count, **_source_context(db))
+    return render(request, "scope/row.html", entry=entry, enabled=bool(enabled), count=count, linked=bool(linked),
+                  **_source_context(db))

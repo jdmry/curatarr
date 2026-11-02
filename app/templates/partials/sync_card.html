@@ -42,7 +42,7 @@
   {% else %}
   <form class="sync-form">
     <label class="field inline-field">
-      <span class="field-label">Titles</span>
+      <span class="field-label">Titles <span class="muted">(0 = all)</span></span>
       <input type="number" name="max_items" min="0" value="{{ run.max_items if run and run.max_items else 20 }}">
     </label>
     <div class="actions">
@@ -50,7 +50,8 @@
       <button class="btn btn-primary" type="button" hx-post="/sync/live" hx-target="#sync-card" hx-swap="outerHTML" hx-disabled-elt="this">{{ icon('play', 16) }}Sync to Plex</button>
     </div>
   </form>
-  <p class="muted small" style="margin-top:12px">Only the first titles of the scope are processed, 0 means all.
+  <p class="muted small" style="margin-top:12px">Test and sync only process this many titles, 0 means all of them.
+    Scheduled syncs always process all of them.
     A test shows what would change without touching Plex. A sync uploads the new posters: Plex keeps the old ones,
     so you can still pick them back in Plex.</p>
   {% endif %}

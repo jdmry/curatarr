@@ -1,5 +1,6 @@
 """Keep a Plex collection equal to the owned titles of a list, in the list's order."""
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from plexapi.exceptions import NotFound
@@ -90,14 +91,19 @@ def fetch_items(server, keys: list[str]) -> list:
     return [found[key] for key in keys if key in found]
 
 
-def apply(server, section, collection, config: ListConfig, wanted: list, steps: Plan):
-    """Carry out the plan with the wanted Plex items. Returns the collection (None once deleted)."""
+def apply(server, section, collection, config: ListConfig, wanted: list, steps: Plan,
+          say: Callable[[str], None] = lambda message: None):
+    """Carry out the plan with the wanted Plex items. Returns the collection (None once deleted).
+
+    `say` reports the slow steps as they start.
+    """
     if steps.delete and collection is not None:
         collection.delete()
         collection = None
     if not wanted:
         return None
     if collection is None:
+        say(f"creating the collection with {len(wanted)} titles")
         collection = section.createCollection(config.name, items=wanted)
         collection.addLabel(LABEL)
         collection.sortUpdate("custom")
@@ -105,12 +111,15 @@ def apply(server, section, collection, config: ListConfig, wanted: list, steps: 
     else:
         if steps.rename:
             collection.editTitle(config.name)
+        if steps.add or steps.remove:
+            say(f"adding {len(steps.add)} titles, removing {len(steps.remove)}")
         if steps.remove:
             collection.removeItems([_Key(key) for key in steps.remove])
         if steps.add:
             added = set(steps.add)
             collection.addItems([item for item in wanted if str(item.ratingKey) in added])
     if steps.create or steps.reorder:
+        say("putting the titles in the list's order")
         _reorder(collection, wanted)
     set_private_label(collection, config)
     set_visibility(collection, config.placement, owner_only=config.audience == "owner")

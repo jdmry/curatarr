@@ -11,6 +11,7 @@ class ScopeEntry:
     collection_key: str = ""
     collection_title: str = ""
     source_id: int | None = None
+    refresh_posters: bool = False  # list collections: send their posters after each sync of the list
 
     @property
     def is_library(self) -> bool:
@@ -19,10 +20,10 @@ class ScopeEntry:
 
 def list_scope(conn: sqlite3.Connection) -> list[ScopeEntry]:
     rows = conn.execute(
-        "SELECT library_key, library_title, collection_key, collection_title, source_id FROM scope"
+        "SELECT library_key, library_title, collection_key, collection_title, source_id, refresh_posters FROM scope"
         " ORDER BY library_title COLLATE NOCASE, collection_key != '', collection_title COLLATE NOCASE"
     )
-    return [ScopeEntry(*row) for row in rows]
+    return [ScopeEntry(*row[:5], bool(row[5])) for row in rows]
 
 
 def set_scope_entry(conn: sqlite3.Connection, entry: ScopeEntry, enabled: bool) -> None:
@@ -32,10 +33,11 @@ def set_scope_entry(conn: sqlite3.Connection, entry: ScopeEntry, enabled: bool) 
         )
         return
     conn.execute(
-        "INSERT INTO scope (library_key, library_title, collection_key, collection_title, source_id)"
-        " VALUES (?, ?, ?, ?, ?)"
+        "INSERT INTO scope (library_key, library_title, collection_key, collection_title, source_id, refresh_posters)"
+        " VALUES (?, ?, ?, ?, ?, ?)"
         " ON CONFLICT (library_key, collection_key) DO UPDATE SET"
         " library_title = excluded.library_title, collection_title = excluded.collection_title,"
-        " source_id = excluded.source_id",
-        (entry.library_key, entry.library_title, entry.collection_key, entry.collection_title, entry.source_id),
+        " source_id = excluded.source_id, refresh_posters = excluded.refresh_posters",
+        (entry.library_key, entry.library_title, entry.collection_key, entry.collection_title, entry.source_id,
+         int(entry.refresh_posters)),
     )

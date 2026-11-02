@@ -120,3 +120,4 @@ def test_picked_source_makes_the_list(client, app, server, monkeypatch):
     html = client.post("/collections/stremio/catalogs", data={"editing_id": str(list_id), "source": "stremio",
                        "stremio_manifest": "https://addon.test/***/manifest.json", "stremio_catalog": "movie/nfx"}).text
     assert 'value="movie/nfx" data-name="Netflix" selected' in html
+

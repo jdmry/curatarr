@@ -9,7 +9,7 @@ import sqlite3
 import threading
 import time
 from collections import defaultdict
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
 
 from app import db
@@ -84,13 +84,19 @@ def building(library_key: str) -> bool:
 
 
 def ensure_index(
-    conn: sqlite3.Connection, server, section, now: float | None = None, background: Path | None = None
+    conn: sqlite3.Connection,
+    server,
+    section,
+    now: float | None = None,
+    background: Path | None = None,
+    on_build: Callable[[], None] | None = None,
 ) -> bool:
     """Build the index of a library, or add the titles added since the last check.
 
     A full build takes a minute or two on big libraries. With `background` (the
     database path), it runs in a thread instead and False means "not ready yet";
-    a stale index stays usable meanwhile.
+    a stale index stays usable meanwhile. `on_build` is called before a full
+    build done here, to tell the user why it takes a while.
     """
     key = str(section.key)
     now = int(now or time.time())
@@ -99,6 +105,8 @@ def ensure_index(
         if background is not None:
             _build_in_background(background, server, section)
             return row is not None
+        if on_build:
+            on_build()
         with _locks[key]:
             _build(conn, server, section, now)
         return True

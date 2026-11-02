@@ -8,7 +8,9 @@ from app.lists.store import ListConfig, get_list, save_list
 from app.plex.sharing import Friend
 from app.plex import client as plex
 from app.plex.client import save_connection
-from app.plex.guid_index import ensure_index
+from app.plex.guid_index import ensure_index, forget_index
+from app.posters.sources import PosterSource, save_source
+from app.scope import ScopeEntry, list_scope, set_scope_entry
 from tests.fakes import FakeCollection, FakeSection, FakeServer, title
 
 MOVIES = [title(i, f"M{i}", imdb=f"tt{i}") for i in range(1, 7)]
@@ -124,6 +126,63 @@ def test_live_sync_then_unchanged_then_delete(client, app, plex_server):
     client.post("/collections/lists/1/delete")
     assert collection.deleted
 
+
+
+def test_sync_reports_progress(client, app, plex_server):
+    with connection(app.state.db_path) as conn:
+        save_list(conn, config(id=None, name="Second", max_items=2))
+        forget_index(conn, "1")
+    run(client, app, "live")
+    messages = [line.message for line in app.state.events.tail(30)]
+    assert "Top (1 of 2): reading the list" in messages and "Second (2 of 2): reading the list" in messages
+    assert any(message.startswith("Indexing Movies") for message in messages)
+    assert "Top: creating the collection with 2 titles" in messages
+    assert app.state.list_runner.progress is None
+
+
+class FakePosters:
+    def __init__(self):
+        self.calls = []
+
+    def start(self, mode, only=None):
+        self.calls.append((mode, only))
+
+
+def test_picked_collection_follows_its_list_and_gets_posters(client, app, plex_server):
+    posters = app.state.list_runner.posters = FakePosters()
+    saved = run(client, app, "live")
+    assert posters.calls == []
+    with connection(app.state.db_path) as conn:
+        rpdb = save_source(conn, PosterSource(None, "RPDB", "https://r.test/{imdb_id}.jpg"))
+        set_scope_entry(conn, ScopeEntry("1", "Movies", saved.collection_key, "Top", rpdb, True), True)
+        save_list(conn, config(id=1, name="Renamed", max_items=2))
+
+    run(client, app, "test")
+    assert posters.calls == []
+    assert any("posters would be synced" in line.message for line in app.state.events.tail(10))
+
+    run(client, app, "live")
+    entry = ScopeEntry("1", "Movies", saved.collection_key, "Renamed", rpdb, True)
+    with connection(app.state.db_path) as conn:
+        assert list_scope(conn) == [entry]
+    assert posters.calls == [("live", [entry])]
+
+    client.post("/collections/lists/1/delete")
+    with connection(app.state.db_path) as conn:
+        assert list_scope(conn) == []
+
+
+def test_refresh_tick_only_for_list_collections(client, app, plex_server):
+    saved = run(client, app, "live")
+    data = {"library_key": "1", "library_title": "Movies", "collection_key": saved.collection_key,
+            "collection_title": "Top", "enabled": "1", "refresh_posters": "1"}
+    html = client.post("/posters/scope/entry", data={**data, "linked": "1"}).text
+    assert "Sync posters on each collection sync" in html
+    with connection(app.state.db_path) as conn:
+        assert list_scope(conn)[0].refresh_posters
+    client.post("/posters/scope/entry", data=data)
+    with connection(app.state.db_path) as conn:
+        assert not list_scope(conn)[0].refresh_posters
 
 class FakeManagedHub:
     def __init__(self, hubs, identifier, title, home=False):

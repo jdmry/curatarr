@@ -2,4 +2,4 @@
 
 APP_NAME = "Curatarr"
 APP_SLUG = "curatarr"
-APP_VERSION = "0.1.0"
+APP_VERSION = "0.1.1"

@@ -12,7 +12,7 @@
 <section class="card">
   <div class="card-header">
     <h2 class="card-title">{{ icon('refresh') }}Sync</h2>
-    {% if running %}<span class="badge accent"><span class="spinner" style="width:10px;height:10px"></span>{{ 'Testing' if mode == 'test' else 'Syncing' }}</span>{% endif %}
+    {% if running %}<span class="badge accent"><span class="spinner" style="width:10px;height:10px"></span>{{ 'Testing' if mode == 'test' else 'Syncing' }}{% if progress %} · {{ progress }}{% endif %}</span>{% endif %}
   </div>
   {% if error %}<div class="alert error" style="margin-bottom:16px">{{ icon('x') }}<div>{{ error }}</div></div>{% endif %}
   <div class="section-bar" style="margin:0">

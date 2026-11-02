@@ -88,8 +88,8 @@ The default service is used everywhere, unless a library or collection picks ano
 
 | Tab | What it does |
 |---|---|
-| **Libraries** | Tick whole libraries or only some collections, each with the default service or another one. A collection's own service wins over its library's. A title in several ticked places is processed once. |
-| **Auto sync** | **Run test** shows what would change, live, without touching Plex (optionally only the first N titles). **Sync to Plex** sends the new posters. Set a schedule (every 1, 3, 6, 12 or 24 hours) to keep them up to date. |
+| **Libraries** | Tick whole libraries or only some collections, each with the default service or another one. A collection's own service wins over its library's. A title in several ticked places is processed once. A collection made by one of your lists also offers **Sync posters on each collection sync**: its titles get their posters right after each sync of the list. |
+| **Auto sync** | **Run test** shows what would change, live, without touching Plex. **Sync to Plex** sends the new posters. Both only process the number of titles you enter (0 = all). Set a schedule (every 1, 3, 6, 12 or 24 hours) to keep them up to date: scheduled syncs process all titles. |
 | **Manual** | Find any movie or show, compare its current poster with the new one, and apply it. |
 | **History** | Every sync, with what was (or would be) changed for each title. |
 
@@ -123,7 +123,7 @@ again. Plex keeps the previous posters, so you can always switch back in Plex.
 
 | Tab | What it does |
 |---|---|
-| **Lists** | Your lists. **Run test** shows what each collection would get; **Sync to Plex** (or **Sync** on one list) creates or updates them, in the list's order. Schedule it (every 1 to 24 hours, separately from posters) to keep them fresh. |
+| **Lists** | Your lists. A saved list is only created in Plex by its first sync. **Run test** shows what each collection would get; **Sync to Plex** (or **Sync** on one list) creates or updates them, in the list's order, with each step shown in Activity. Schedule it (every 1 to 24 hours, separately from posters) to keep them fresh. |
 | **Home order** | The rows of each library, top first, as in Plex's *Manage Recommendations*. Move them with the arrows. |
 | **Clean up** | Every collection in your libraries and who made it. Delete the ones no list keeps, like old Agregarr ones; their titles stay in Plex. |
 
@@ -167,7 +167,7 @@ Everything is set up in the web UI. Environment variables are optional.
 | Tag | What it is |
 |---|---|
 | `latest` | The latest release. |
-| `0.1.0`, `0.1` | A given release. |
+| `0.1.1`, `0.1` | A given release. |
 | `edge` | The latest commit on `main`. May break. |
 
 Images are built for `linux/amd64` and `linux/arm64`.

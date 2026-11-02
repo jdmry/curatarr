@@ -10,7 +10,7 @@
 {% for collection in collections %}
 {% set ckey = collection.ratingKey | string %}
 {% with entry = selected.get(ckey) or {'library_key': section.key | string, 'library_title': section.title, 'collection_key': ckey, 'collection_title': collection.title, 'source_id': None},
-        enabled = ckey in selected, count = collection.childCount %}
+        enabled = ckey in selected, count = collection.childCount, linked = ckey in linked_keys %}
   {% include "scope/row.html" %}
 {% endwith %}
 {% endfor %}

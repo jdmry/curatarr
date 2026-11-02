@@ -160,3 +160,15 @@ def test_activity_stream_starts_after_rendered_lines(client, app):
     app.state.events.info("two")
     last = app.state.events.tail(1)[0].id
     assert f'sse-connect="/events/logs?after={last}"' in client.get("/posters/sync").text
+
+
+def test_sync_of_some_collections_only(client, app, server):
+    add_source(app)
+    with connection(app.state.db_path) as conn:
+        set_scope_entry(conn, ScopeEntry("1", "Movies"), True)
+    app.state.runner.start("test", only=[ScopeEntry("1", "Movies", "10", "Marvel")])
+    app.state.runner.wait(10)
+    with connection(app.state.db_path) as conn:
+        run = conn.execute("SELECT * FROM runs ORDER BY id DESC").fetchone()
+    assert run["status"] == "done" and run["total"] == 2
+    assert any("titles of Marvel" in line.message for line in app.state.events.tail(10))

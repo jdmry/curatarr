@@ -16,6 +16,7 @@ from app.lists.store import PLACEMENTS, ListConfig, delete_list, get_list, list_
 from app.plex import client as plex
 from app.plex import sharing
 from app.plex.guid_index import ensure_index
+from app.scope import list_scope, set_scope_entry
 from app.secrets import MASK
 from app.settings_store import get_setting
 from app.sync.runner import AlreadyRunning
@@ -191,7 +192,7 @@ def collections_root():
 def _panel_context(request: Request, db: sqlite3.Connection) -> dict:
     runner = request.app.state.list_runner
     return {"lists": list_lists(db), "placements": PLACEMENTS, "running": runner.running, "mode": runner.mode,
-            "results": runner.results}
+            "progress": runner.progress, "results": runner.results}
 
 
 @router.get("/collections/lists")
@@ -326,6 +327,9 @@ def remove_list(request: Request, list_id: int, db: sqlite3.Connection = Depends
         except Exception as exc:
             plex.forget_server()
             request.app.state.events.add("error", f"{config.name}: {plex.describe_error(exc, connection)}")
+    for entry in list_scope(db):
+        if config.collection_key and entry.collection_key == config.collection_key:
+            set_scope_entry(db, entry, False)
     delete_list(db, list_id)
     return RedirectResponse("/collections/lists", status_code=303)
 

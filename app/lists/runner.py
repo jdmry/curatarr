@@ -14,21 +14,25 @@ from app.lists.store import ListConfig, list_lists
 from app.plex import client as plex
 from app.plex import sharing
 from app.plex.guid_index import ensure_index, forget_index
+from app.scope import ScopeEntry, list_scope, set_scope_entry
 from app.settings_store import get_setting, set_setting
 from app.sync.events import EventLog
-from app.sync.runner import AlreadyRunning
+from app.sync.runner import AlreadyRunning, SyncRunner
 
 log = logging.getLogger(__name__)
 
 
 class ListRunner:
-    def __init__(self, db_path: Path, events: EventLog):
+    def __init__(self, db_path: Path, events: EventLog, posters: SyncRunner | None = None):
         self.db_path = db_path
         self.events = events
+        self.posters = posters
+        self._refresh: list[ScopeEntry] = []  # collections whose posters are sent after the sync
         self._lock = threading.Lock()
         self._thread: threading.Thread | None = None
         self.mode: str | None = None
         self.results: dict[int, str] = {}  # list id -> what happened (or would), from the last sync
+        self.progress: str | None = None  # "2 of 5" while a sync of several lists runs
 
     @property
     def running(self) -> bool:
@@ -55,6 +59,8 @@ class ListRunner:
         except Exception as exc:
             log.exception("Collections sync failed")
             self.events.add("error", f"{name} failed: {type(exc).__name__}: {exc}")
+        finally:
+            self.progress = None
 
     def _process(self, conn: sqlite3.Connection, mode: str, list_ids: list[int] | None, name: str) -> None:
         live = mode == "live"
@@ -74,8 +80,14 @@ class ListRunner:
             self.events.add("error", f"{name}: {plex.describe_error(exc, connection)}")
             return
         keys = {"tmdb_key": get_setting(conn, "tmdb.key"), "mdblist_key": get_setting(conn, "mdblist.key")}
+        self._refresh = []
         with httpx.Client(follow_redirects=True) as http:
-            for config in configs:
+            for number, config in enumerate(configs, 1):
+                if len(configs) > 1:
+                    self.progress = f"{number} of {len(configs)}"
+                    self.events.info(f"{config.name} ({self.progress}): reading the list")
+                else:
+                    self.events.info(f"{config.name}: reading the list")
                 try:
                     summary = self._sync_list(conn, server, http, keys, config, live)
                 except sources.ListError as exc:
@@ -93,6 +105,11 @@ class ListRunner:
                 conn.commit()
             self._sync_sharing(conn, server, http, connection.token, live)
         self.events.add("ok", f"{name} done")
+        if self._refresh and self.posters is not None:
+            try:
+                self.posters.start("live", only=self._refresh)
+            except AlreadyRunning:
+                self.events.add("warn", "Posters not refreshed: a poster sync is already running.")
 
     def _sync_sharing(self, conn: sqlite3.Connection, server, http: httpx.Client, token: str, live: bool) -> None:
         """Hide each private collection from the friends it isn't for."""
@@ -128,7 +145,8 @@ class ListRunner:
     def _sync_list(self, conn, server, http, keys: dict, config: ListConfig, live: bool) -> str:
         fetched = sources.fetch(sources.parse(config.url), http, **keys)
         section = server.library.sectionByID(int(config.library_key))
-        ensure_index(conn, server, section)
+        ensure_index(conn, server, section, on_build=lambda: self.events.info(
+            f"Indexing {section.title}: once a day, up to a minute or two on big libraries"))
         result = match(conn, config.library_key, section.type, fetched.items)
         keys = [key for _, key in result.owned][:config.max_items]
         wanted = collections.fetch_items(server, keys)
@@ -139,14 +157,33 @@ class ListRunner:
         steps = collections.plan(collection, config, [str(item.ratingKey) for item in wanted])
         summary = steps.describe(len(wanted))
         if live:
-            collection = collections.apply(server, section, collection, config, wanted, steps)
+            collection = collections.apply(server, section, collection, config, wanted, steps,
+                                           lambda message: self.events.info(f"{config.name}: {message}"))
             key = str(collection.ratingKey) if collection is not None else None
             self._record(conn, config, total=result.total, matched=len(wanted), collection_key=key)
             self.events.add("ok" if steps.changed else "info",
                             f"{config.name}: {summary} ({len(wanted)} of {result.total} titles)")
+            self._posters(conn, config, key)
         else:
             self.events.info(f"{config.name}, test: {summary} ({len(wanted)} of {result.total} titles)")
+            picked = _picked(conn, {config.collection_key} if config.collection_key else set())
+            if picked is not None and picked.refresh_posters:
+                self.events.info(f"{config.name}, test: its posters would be synced after the collection")
         return summary
+
+    def _posters(self, conn: sqlite3.Connection, config: ListConfig, key: str | None) -> None:
+        """Keep the collection's entry in Posters → Libraries in step, and queue its posters."""
+        picked = _picked(conn, {k for k in (key, config.collection_key) if k})
+        if picked is None:
+            return
+        set_scope_entry(conn, picked, False)
+        if key is None:
+            return  # the collection is gone
+        entry = ScopeEntry(config.library_key, config.library_title, key, config.name, picked.source_id,
+                           picked.refresh_posters)
+        set_scope_entry(conn, entry, True)  # same entry, or renamed, or made again in Plex
+        if entry.refresh_posters:
+            self._refresh.append(entry)
 
     @staticmethod
     def _record(conn, config: ListConfig, total=None, matched=None, collection_key=None, error=None) -> None:
@@ -158,3 +195,7 @@ class ListRunner:
             " synced_at = CURRENT_TIMESTAMP WHERE id = ?",
             (total, matched, collection_key, config.id),
         )
+
+
+def _picked(conn: sqlite3.Connection, keys: set[str]) -> ScopeEntry | None:
+    return next((e for e in list_scope(conn) if e.collection_key and e.collection_key in keys), None)

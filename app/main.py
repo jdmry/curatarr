@@ -46,7 +46,7 @@ def create_app(env: Env | None = None) -> FastAPI:
             mark_interrupted_runs(conn)
         app.state.events = EventLog()
         app.state.runner = SyncRunner(app.state.db_path, app.state.events)
-        app.state.list_runner = ListRunner(app.state.db_path, app.state.events)
+        app.state.list_runner = ListRunner(app.state.db_path, app.state.events, app.state.runner)
         app.state.scheduler = Scheduler(app.state.db_path, app.state.runner, app.state.events)
         app.state.scheduler.start()
         app.state.list_scheduler = Scheduler(app.state.db_path, app.state.list_runner, app.state.events,
