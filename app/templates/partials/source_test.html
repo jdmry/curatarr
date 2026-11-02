@@ -1,0 +1,42 @@
+<section class="card" style="margin-top:16px">
+  {% if error %}
+  <div class="alert error">{{ icon('x') }}<div>{{ error }}</div></div>
+  {% else %}
+  <div class="card-header">
+    <h2 class="card-title">{{ icon('film' if info.kind == 'movie' else 'tv') }}{{ info.title }}{% if info.year %} <span class="muted">({{ info.year }})</span>{% endif %}</h2>
+    <span class="badge">Preview only, nothing sent to Plex</span>
+  </div>
+
+  <div class="facts">
+    <div><span class="fact-label">IMDb</span>{{ info.imdb_id or '—' }}</div>
+    <div><span class="fact-label">TMDB</span>{{ info.tmdb_id or '—' }}</div>
+    <div><span class="fact-label">TVDB</span>{{ info.tvdb_id or '—' }}</div>
+    <div><span class="fact-label">Quality</span>
+      {% if not source.uses_quality %}<span class="muted">not read{% if source.no_quality %}, sends {{ source.no_quality }}{% endif %}</span>
+      {% else %}{% for q in info.quality %}<span class="chip">{{ q }}</span>{% else %}<span class="muted">none detected{% if source.no_quality %}, sends {{ source.no_quality }}{% endif %}</span>{% endfor %}{% endif %}
+    </div>
+  </div>
+
+  {% if skipped %}
+  <div class="alert" style="margin-top:16px">{{ icon('alert') }}<div><strong>Skipped:</strong> {{ skipped }}.</div></div>
+  {% else %}
+  <div class="url-box"><span class="fact-label">Generated URL</span><code>{{ masked_url }}</code></div>
+
+  <div class="compare">
+    <figure>
+      <div class="poster">{% if current_thumb %}<img src="/plex/image?path={{ current_thumb | urlencode }}&w=400&h=600" alt="">{% endif %}</div>
+      <figcaption>Current poster in Plex</figcaption>
+    </figure>
+    <figure>
+      {% if image %}
+      <div class="poster"><img src="{{ image }}" alt=""></div>
+      <figcaption>From {{ source.name }} · {{ (result.content | length / 1024) | round | int }} KB · {{ '%.1f' % result.elapsed }} s</figcaption>
+      {% else %}
+      <div class="poster poster-error">{{ icon('x', 28) }}<span>{{ result.error }}</span></div>
+      <figcaption>From {{ source.name }}{% if result.elapsed %} · {{ '%.1f' % result.elapsed }} s{% endif %}</figcaption>
+      {% endif %}
+    </figure>
+  </div>
+  {% endif %}
+  {% endif %}
+</section>

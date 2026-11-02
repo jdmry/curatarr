@@ -1,0 +1,24 @@
+{% if error %}
+<div class="alert error">{{ icon('x') }}<div>{{ error }}</div></div>
+{% elif results is none %}
+<p class="muted small">{% if pick == 'posters' %}Type at least two letters of a movie or show.{% else %}Pick a movie or show to see its poster from this service. Nothing is sent to Plex.{% endif %}</p>
+{% elif not results %}
+<p class="muted small">Nothing found for “{{ query }}”.</p>
+{% else %}
+{% for r in results %}
+{% if pick == 'posters' %}
+<button type="button" class="result" hx-get="/posters/titles/{{ r.rating_key }}" hx-target="#title-poster"
+        hx-indicator="#poster-busy">
+{% else %}
+<button type="button" class="result" hx-post="/settings/services/test" hx-include="#source-form"
+        hx-vals='{"rating_key": "{{ r.rating_key }}"}' hx-target="#test-result" hx-indicator="#test-busy">
+{% endif %}
+  <span class="result-thumb">{% if r.thumb %}<img src="/plex/image?path={{ r.thumb | urlencode }}&w=72&h=108" alt="" loading="lazy">{% endif %}</span>
+  <span class="result-text">
+    <strong>{{ r.title }}</strong>
+    <span class="muted small">{{ r.year or '' }}{{ ' · ' if r.year }}{{ r.library }}</span>
+  </span>
+  {{ icon('arrow-right', 16) }}
+</button>
+{% endfor %}
+{% endif %}

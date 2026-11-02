@@ -1,0 +1,58 @@
+<section class="card" id="recap">
+  {% if error %}
+  <div class="alert error" style="margin-bottom:16px">{{ icon('alert') }}
+    <div><strong>Plex is unreachable.</strong> {{ error }} <a href="/settings/plex">Check the settings</a></div>
+  </div>
+  {% endif %}
+  <div class="stats">
+    {% if not error %}
+    <div class="stat">
+      <div class="stat-icon">{{ icon('server') }}</div>
+      <div>
+        <div class="stat-label">Server</div>
+        <div class="stat-value">{{ server_name }}</div>
+        <div class="stat-hint"><span class="badge ok"><span class="dot"></span>Online</span> Plex {{ version.split('-')[0] }}</div>
+      </div>
+    </div>
+    <div class="stat">
+      <div class="stat-icon">{{ icon('library') }}</div>
+      <div>
+        <div class="stat-label">Library</div>
+        <div class="stat-value">{{ "{:,}".format(movies + shows) }}</div>
+        <div class="stat-hint">{{ "{:,}".format(movies) }} movies · {{ "{:,}".format(shows) }} shows</div>
+      </div>
+    </div>
+    {% endif %}
+    <div class="stat">
+      <div class="stat-icon">{{ icon('target') }}</div>
+      <div>
+        <div class="stat-label">Libraries</div>
+        {% if scope_libraries or scope_collections %}
+        <div class="stat-value">{{ scope_libraries + scope_collections }}</div>
+        <div class="stat-hint">{{ scope_libraries }} {{ 'library' if scope_libraries == 1 else 'libraries' }} · {{ scope_collections }} {{ 'collection' if scope_collections == 1 else 'collections' }}</div>
+        {% else %}
+        <div class="stat-value muted">None</div>
+        <div class="stat-hint"><a href="/posters/scope">Choose what to sync</a></div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="stat">
+      <div class="stat-icon">{{ icon('refresh') }}</div>
+      <div>
+        <div class="stat-label">Last sync</div>
+        {% if last_run %}
+        <div class="stat-value">{{ last_run.started_at | ago }}</div>
+        <div class="stat-hint">
+          {% if last_run.status == 'failed' %}<span class="badge error">Failed</span>
+          {% elif last_run.status == 'running' %}<span class="badge accent">Running</span>
+          {% else %}{{ 'Test' if last_run.mode == 'test' else 'Live' }} · {{ "{:,}".format(last_run.total) }} titles{% endif %}
+          · <a href="/posters/history/{{ last_run.id }}">Details</a>
+        </div>
+        {% else %}
+        <div class="stat-value muted">Never</div>
+        <div class="stat-hint"><a href="/posters/sync">Run a sync</a></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>

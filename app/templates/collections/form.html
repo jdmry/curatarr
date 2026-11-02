@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit list' if config.id else 'Add a list' }} · {{ app_name }}{% endblock %}
+{% block content %}
+<header class="page-header">
+  <div>
+    <h1>{{ config.name if config.id else 'Add a list' }}</h1>
+    <p class="subtitle">Pick a list, choose where it goes in Plex, preview which titles you have, save.</p>
+  </div>
+  <a class="btn btn-ghost" href="/collections/lists">{{ icon('arrow-left', 16) }}Lists</a>
+</header>
+
+{% if error %}<div class="alert error" style="margin-bottom:16px">{{ icon('x') }}<div>{{ error }}</div></div>{% endif %}
+{% if not libraries %}<div class="alert" style="margin-bottom:16px">{{ icon('alert') }}<div>Plex is not reachable: libraries can't be listed.</div></div>{% endif %}
+
+<div class="grid-2">
+  <form id="list-form" class="card" method="post" action="{{ '/collections/lists/%d' % config.id if config.id else '/collections/lists' }}">
+    <h2 class="form-step">1. Pick a list</h2>
+    <input type="hidden" name="editing_id" value="{{ config.id or '' }}">
+    <div class="segmented" role="radiogroup" aria-label="Where the list comes from">
+      {% for key, label in list_sources.items() %}
+      <label><input type="radio" name="source" value="{{ key }}" {{ 'checked' if fields.source == key }}><span>{{ label }}</span></label>
+      {% endfor %}
+    </div>
+
+    <div class="source-panel" data-source="mdblist">
+      {% if has_mdblist_key %}
+      <div hx-get="/collections/mdblist?selected={{ fields.mdblist_list }}" hx-trigger="load" hx-swap="outerHTML">
+        <div class="skeleton skeleton-line" style="width:60%"></div>
+      </div>
+      {% endif %}
+      <label class="field">
+        <span class="field-label">{{ 'Or paste a list URL' if has_mdblist_key else 'List URL' }}</span>
+        <input name="mdblist_url" value="{{ fields.mdblist_url }}" spellcheck="false" autocomplete="off"
+               placeholder="https://mdblist.com/lists/user/list-name"
+               oninput="if (this.form.mdblist_list) this.form.mdblist_list.value = ''">
+        {% if not has_mdblist_key %}<span class="field-help">Add a <a href="/settings/mdblist">MDBList key</a> to pick
+          from your lists (private ones too) and the popular ones instead.</span>{% endif %}
+      </label>
+    </div>
+
+    <div class="source-panel" data-source="tmdb">
+      {% if not has_tmdb_key %}<div class="alert" style="margin-bottom:12px">{{ icon('alert') }}<div>TMDB lists need a
+        <a href="/settings/tmdb">TMDB key</a>.</div></div>{% endif %}
+      <div class="chips">
+        {% for path, label in presets.items() %}
+        <label class="chip-radio"><input type="radio" name="tmdb_preset" value="{{ path }}" {{ 'checked' if fields.tmdb_preset == path }}
+               onchange="this.form.tmdb_url.value = ''"><span>{{ label }}</span></label>
+        {% endfor %}
+      </div>
+      <label class="field">
+        <span class="field-label">Or paste a list or collection URL</span>
+        <input name="tmdb_url" value="{{ fields.tmdb_url }}" spellcheck="false" autocomplete="off"
+               placeholder="https://www.themoviedb.org/list/…"
+               oninput="this.form.querySelectorAll('[name=tmdb_preset]').forEach(r => r.checked = false)">
+      </label>
+    </div>
+
+    <div class="source-panel" data-source="stremio">
+      <div class="field">
+        <span class="field-label">Addon manifest URL</span>
+        <div class="input-row">
+          <input name="stremio_manifest" value="{{ fields.stremio_manifest }}" spellcheck="false" autocomplete="off"
+                 placeholder="https://…/manifest.json">
+          <button class="btn" type="button" hx-post="/collections/stremio/catalogs" hx-include="#list-form"
+                  hx-vals='{"source": "stremio"}' hx-target="#stremio-catalogs" hx-disabled-elt="this">Load catalogs</button>
+        </div>
+        <span class="field-help">The addon's install link from Stremio. Its configuration is hidden once saved.</span>
+      </div>
+      <div id="stremio-catalogs">
+        {% if fields.stremio_manifest %}
+        <div hx-post="/collections/stremio/catalogs" hx-include="#list-form" hx-vals='{"source": "stremio"}'
+             hx-trigger="load" hx-swap="outerHTML"><div class="skeleton skeleton-line" style="width:60%"></div></div>
+        {% endif %}
+      </div>
+    </div>
+
+    <h2 class="form-step">2. In Plex</h2>
+    <div class="form-grid">
+      <label class="field">
+        <span class="field-label">Library</span>
+        <select name="library_key" required>
+          <option value="">Pick a library</option>
+          {% for lib in libraries %}
+          <option value="{{ lib.key }}" {{ 'selected' if lib.key == config.library_key }}>{{ lib.title }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-label">Name</span>
+        <input name="name" value="{{ config.name }}" placeholder="Defaults to the list's name">
+      </label>
+      <label class="field">
+        <span class="field-label">Show it in</span>
+        <select name="placement">
+          {% for key, label in placements.items() %}
+          <option value="{{ key }}" {{ 'selected' if key == config.placement }}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-label">Who sees it</span>
+        <select name="audience">
+          {% for value, label in audiences %}
+          <option value="{{ value }}" {{ 'selected' if value == config.audience }}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        {% if audience_error %}<span class="field-help">Friends can't be listed: {{ audience_error }}</span>{% endif %}
+      </label>
+      <label class="field">
+        <span class="field-label">Max titles</span>
+        <input type="number" name="max_items" min="1" max="500" value="{{ config.max_items }}">
+      </label>
+    </div>
+
+    <div class="actions" style="margin-top:20px">
+      <button class="btn" type="button" hx-post="/collections/lists/preview" hx-include="#list-form"
+              hx-target="#list-preview" hx-indicator="#preview-busy" hx-disabled-elt="this">{{ icon('search', 16) }}Preview</button>
+      <button class="btn btn-primary" type="submit">{{ icon('check', 16) }}Save</button>
+      <a class="btn btn-ghost" href="/collections/lists">Cancel</a>
+    </div>
+  </form>
+
+  <section class="card">
+    <div class="card-header"><h2 class="card-title">{{ icon('activity') }}Show it in</h2></div>
+    <dl class="defs">
+      <dt>Home and Recommended</dt><dd>A row on your Home, your friends' Home and the library's Recommended tab.</dd>
+      <dt>Recommended only</dt><dd>A row in the library's Recommended tab.</dd>
+      <dt>Library only</dt><dd>Only in the library's Collections.</dd>
+    </dl>
+    <div class="card-header" style="margin-top:20px"><h2 class="card-title">{{ icon('lock') }}Who sees it</h2></div>
+    <p class="muted small" style="margin:0">Plex has no collections per person: for <em>Only me</em> or <em>Only</em>
+      a friend, the collection gets a label and every other friend's sharing restrictions exclude it. Their other
+      restrictions are kept. You always see everything.</p>
+    <p class="muted small">Rows on the Home need Plex Pass on the server.</p>
+  </section>
+</div>
+
+<div id="preview-busy" class="htmx-indicator card" style="margin-top:16px;gap:10px;align-items:center">
+  <span class="spinner"></span>Fetching the list and looking for its titles in Plex…
+</div>
+<div id="list-preview"></div>
+{% endblock %}

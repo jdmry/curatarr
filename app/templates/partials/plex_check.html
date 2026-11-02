@@ -1,0 +1,36 @@
+<div class="card-section">
+{% if check.ok %}
+  <div class="alert ok">{{ icon('check') }}
+    <div>{% if saved %}<strong>Saved.</strong> {% endif %}Connected to <strong>{{ check.server_name }}</strong>
+      <span class="muted">· Plex {{ check.version.split('-')[0] }}</span></div>
+  </div>
+  {% if check.libraries %}
+  <table class="table" style="margin-top:16px">
+    <thead><tr><th>Library</th><th>Type</th><th class="num">Titles</th></tr></thead>
+    <tbody>
+      {% for library in check.libraries %}
+      <tr>
+        <td>{{ library.title }}</td>
+        <td class="muted">{{ 'Movies' if library.type == 'movie' else 'Shows' }}</td>
+        <td class="num">{{ "{:,}".format(library.size) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted" style="margin-top:12px">No movie or show library found on this server.</p>
+  {% endif %}
+  {% if check.recent_thumbs %}
+  <p class="muted small" style="margin:16px 0 10px">Recently added in {{ check.libraries[0].title }}</p>
+  <div class="poster-strip">
+    {% for title, thumb in check.recent_thumbs %}
+    <div class="poster"><img src="/plex/image?path={{ thumb | urlencode }}&w=224&h=336" alt="{{ title }}" title="{{ title }}" loading="lazy"></div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% else %}
+  <div class="alert error">{{ icon('x') }}
+    <div>{% if saved %}<strong>Saved, but the connection failed.</strong> {% endif %}{{ check.error }}</div>
+  </div>
+{% endif %}
+</div>

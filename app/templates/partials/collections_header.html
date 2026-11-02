@@ -1,0 +1,14 @@
+{% set intros = {
+  "lists": "Step 1: add a list from MDBList or TMDB. Each list becomes a Plex collection, kept up to date.",
+  "order": "The order of the rows on your Home and in each library's Recommended tab, top first.",
+  "plex": "Every collection in your libraries. Delete the ones no list keeps, like old Agregarr ones: their titles stay.",
+} %}
+<header class="page-header">
+  <div>
+    <h1>Collections</h1>
+    <p class="subtitle">{{ intros[tab] }}</p>
+  </div>
+</header>
+{% with tabs = [("lists", "/collections/lists", "Lists"), ("order", "/collections/order", "Home order"), ("plex", "/collections/plex", "Clean up")] %}
+  {% include "partials/tabs.html" %}
+{% endwith %}

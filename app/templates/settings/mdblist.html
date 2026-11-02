@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}MDBList · Settings · {{ app_name }}{% endblock %}
+{% block content %}
+{% with tab = "mdblist" %}{% include "partials/settings_header.html" %}{% endwith %}
+
+<section class="card">
+  <div class="card-header">
+    <h2 class="card-title">{{ icon('film') }}MDBList</h2>
+    {% if has_key %}<span class="badge ok"><span class="dot"></span>{{ username or 'Configured' }}</span>
+    {% else %}<span class="badge"><span class="dot"></span>Not configured</span>{% endif %}
+  </div>
+  <p class="muted" style="margin:0 0 16px">Optional. With it, adding a collection lets you pick from your MDBList lists
+    (private ones too) and the most popular ones, instead of pasting a URL.</p>
+  <form>
+    <label class="field">
+      <span class="field-label">API key</span>
+      <input type="password" name="key" autocomplete="off"
+             placeholder="{{ 'Saved. Leave empty to keep it.' if has_key else 'API key' }}">
+      <span class="field-help">Free: on mdblist.com, Preferences → API key.</span>
+    </label>
+    <div class="actions">
+      <button class="btn btn-primary" type="button" hx-post="/settings/mdblist" hx-include="closest form"
+              hx-target="#mdblist-check" hx-disabled-elt="this">{{ icon('check', 16) }}Check and save</button>
+    </div>
+  </form>
+  <div id="mdblist-check"></div>
+</section>
+{% endblock %}

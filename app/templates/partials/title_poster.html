@@ -1,0 +1,63 @@
+<section class="card">
+  {% if error and not item %}
+  <div class="alert error">{{ icon('x') }}<div>{{ error }}</div></div>
+  {% else %}
+  <div class="card-header">
+    <h2 class="card-title">{{ icon('film' if item.TYPE == 'movie' else 'tv') }}{{ item.title }}{% if item.year %} <span class="muted">({{ item.year }})</span>{% endif %}</h2>
+    {% if applied %}<span class="badge ok"><span class="dot"></span>Sent just now</span>
+    {% elif applied_at %}<span class="badge"><span class="dot"></span>Sent {{ applied_at | ago }}</span>{% endif %}
+  </div>
+  <p class="muted small" style="margin:-8px 0 16px">{{ library }}</p>
+
+  {% if sources | length > 1 %}
+  <label class="field inline-field" style="margin-bottom:16px">
+    <span class="field-label">Poster service</span>
+    <select name="source_id" hx-get="/posters/titles/{{ rating_key }}" hx-trigger="change" hx-target="#title-poster"
+            hx-indicator="#poster-busy">
+      {% for s in sources %}<option value="{{ s.id }}" {{ 'selected' if s.id == source.id }}>{{ s.name }}</option>{% endfor %}
+    </select>
+  </label>
+  {% endif %}
+
+  {% if info %}
+  <div class="facts">
+    <div><span class="fact-label">IMDb</span>{{ info.imdb_id or '—' }}</div>
+    <div><span class="fact-label">TMDB</span>{{ info.tmdb_id or '—' }}</div>
+    <div><span class="fact-label">Quality</span>
+      {% if not source.uses_quality %}<span class="muted">not read</span>
+      {% else %}{% for q in info.quality %}<span class="chip">{{ q }}</span>{% else %}<span class="muted">none detected</span>{% endfor %}{% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if error %}<div class="alert error" style="margin-top:16px">{{ icon('x') }}<div>{{ error }}</div></div>
+  {% elif skipped %}<div class="alert" style="margin-top:16px">{{ icon('alert') }}<div><strong>No poster:</strong> {{ skipped }}.</div></div>
+  {% else %}
+  <div class="compare">
+    <figure>
+      <div class="poster">{% if item.thumb %}<img src="/plex/image?path={{ item.thumb | urlencode }}&w=400&h=600" alt="">{% endif %}</div>
+      <figcaption>{{ 'Previous poster' if applied else 'Current poster in Plex' }}</figcaption>
+    </figure>
+    <figure>
+      {% if image %}
+      <div class="poster"><img src="{{ image }}" alt=""></div>
+      <figcaption>{{ 'Now in Plex, from' if applied else 'New, from' }} {{ source.name }} · {{ (result.content | length / 1024) | round | int }} KB</figcaption>
+      {% else %}
+      <div class="poster poster-error">{{ icon('x', 28) }}<span>{{ result.error }}</span></div>
+      <figcaption>From {{ source.name }}</figcaption>
+      {% endif %}
+    </figure>
+  </div>
+
+  {% if apply_error %}<div class="alert error" style="margin-top:16px">{{ icon('x') }}<div>{{ apply_error }}</div></div>{% endif %}
+  {% if applied %}
+  <div class="alert ok" style="margin-top:16px">{{ icon('check') }}<div>Poster sent to Plex. Plex keeps the previous one, you can switch back in Plex.</div></div>
+  {% elif image %}
+  <div class="actions" style="margin-top:20px">
+    <button class="btn btn-primary" hx-post="/posters/titles/{{ rating_key }}/apply" hx-vals='{"source_id": "{{ source.id }}"}'
+            hx-target="#title-poster" hx-indicator="#poster-busy" hx-disabled-elt="this">{{ icon('check', 16) }}Apply to Plex</button>
+  </div>
+  {% endif %}
+  {% endif %}
+  {% endif %}
+</section>

@@ -1,0 +1,17 @@
+{% if error %}
+<div class="alert error">{{ icon('x') }}<div>{{ error }}</div></div>
+{% elif not collections %}
+<p class="muted small">No collection in this library.</p>
+{% else %}
+{% if collections | length > 8 %}
+<input type="search" placeholder="Filter {{ collections | length }} collections…" class="filter"
+       oninput="const q = this.value.toLowerCase(); this.parentElement.querySelectorAll('.scope-row').forEach(r => r.hidden = !r.dataset.title.includes(q))">
+{% endif %}
+{% for collection in collections %}
+{% set ckey = collection.ratingKey | string %}
+{% with entry = selected.get(ckey) or {'library_key': section.key | string, 'library_title': section.title, 'collection_key': ckey, 'collection_title': collection.title, 'source_id': None},
+        enabled = ckey in selected, count = collection.childCount %}
+  {% include "scope/row.html" %}
+{% endwith %}
+{% endfor %}
+{% endif %}

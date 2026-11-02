@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}History · {{ app_name }}{% endblock %}
+{% block content %}
+{% with tab = "history" %}{% include "partials/posters_header.html" %}{% endwith %}
+<section class="card flush">
+  {% if not runs %}
+  <p class="muted" style="padding:20px">No sync yet. Run one from the <a href="/posters/sync">Auto sync</a> tab.</p>
+  {% else %}
+  <div class="table-wrap">
+  <table class="table">
+    <thead><tr><th>Run</th><th>When</th><th>Status</th><th class="num">Titles</th><th class="num">Updated</th>
+      <th class="num">Unchanged</th><th class="num">Skipped</th><th class="num">Errors</th></tr></thead>
+    <tbody>
+      {% for run in runs %}
+      <tr class="row-link">
+        <td><a href="/posters/history/{{ run.id }}"><strong>#{{ run.id }}</strong></a>
+          <span class="badge {{ 'accent' if run.mode == 'test' else 'ok' }}">{{ 'Test' if run.mode == 'test' else 'Live' }}</span></td>
+        <td class="muted">{{ run.started_at | ago }}{% if run.finished_at %} · {{ run.started_at | duration(run.finished_at) }}{% endif %}</td>
+        <td>{% if run.status == 'done' %}<span class="badge ok">Done</span>
+          {% elif run.status == 'running' %}<span class="badge accent">Running</span>
+          {% elif run.status == 'cancelled' %}<span class="badge">Cancelled</span>
+          {% else %}<span class="badge error" title="{{ run.error or '' }}">Failed</span>{% endif %}</td>
+        <td class="num">{{ run.total }}</td>
+        <td class="num">{{ run.applied }}</td>
+        <td class="num">{{ run.unchanged }}</td>
+        <td class="num">{{ run.skipped }}</td>
+        <td class="num">{{ run.errors }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

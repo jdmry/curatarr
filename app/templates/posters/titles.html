@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Manual · Posters · {{ app_name }}{% endblock %}
+{% block content %}
+{% with tab = "titles" %}{% include "partials/posters_header.html" %}{% endwith %}
+<div class="grid-2 titles-layout">
+  <section class="card">
+    <div class="card-header"><h2 class="card-title">{{ icon('search') }}Find a title</h2></div>
+    <input type="search" name="q" placeholder="Search your Plex library…" autocomplete="off" autofocus
+           hx-get="/posters/titles/search" hx-trigger="input changed delay:350ms, search" hx-target="#title-results"
+           hx-indicator="#search-busy">
+    <div id="search-busy" class="htmx-indicator muted small" style="gap:8px;align-items:center;margin-top:10px">
+      <span class="spinner"></span>Searching…
+    </div>
+    <div id="title-results" class="result-list">
+      <p class="muted small">Any movie or show of your Plex, in the scope or not.</p>
+    </div>
+  </section>
+
+  <div>
+    <div id="poster-busy" class="htmx-indicator card" style="gap:10px;align-items:center;margin-bottom:16px">
+      <span class="spinner"></span>Rendering the poster… Some services take a while.
+    </div>
+    <div id="title-poster">
+      <section class="card empty-panel">
+        <p class="muted">Pick a title to compare its Plex poster with the new one, then send it to Plex.</p>
+      </section>
+    </div>
+  </div>
+</div>
+{% endblock %}

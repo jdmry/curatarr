@@ -1,0 +1,11 @@
+<section class="card">
+  <div class="card-header"><h2 class="card-title">{{ icon('activity') }}Activity</h2></div>
+  <div class="log-wrap">
+    <ul class="log" hx-ext="sse" sse-connect="/events/logs?after={{ logs[-1].id if logs else 0 }}" sse-swap="log" hx-swap="beforeend">
+      {% for line in logs %}
+      <li class="log-{{ line.level }}"><time>{{ line.time.strftime('%H:%M:%S') }}</time><span>{{ line.message }}</span></li>
+      {% endfor %}
+      {% if not logs %}<li class="log-empty muted">Nothing yet. Sync activity shows up here live.</li>{% endif %}
+    </ul>
+  </div>
+</section>

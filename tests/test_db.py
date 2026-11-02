@@ -1,0 +1,64 @@
+from dataclasses import replace
+
+from fastapi.testclient import TestClient
+
+from app.db import connection, migrate
+from app.main import create_app
+from app.settings_store import get_setting, seed_setting, set_setting
+
+
+def test_migrate_is_idempotent(tmp_path):
+    path = tmp_path / "test.db"
+    version = migrate(path)
+    assert version >= 1
+    assert migrate(path) == version
+
+
+def test_settings_round_trip(tmp_path):
+    path = tmp_path / "test.db"
+    migrate(path)
+    with connection(path) as conn:
+        assert get_setting(conn, "missing", "default") == "default"
+        set_setting(conn, "a", {"x": [1, 2]})
+        set_setting(conn, "a", {"x": [3]})
+        seed_setting(conn, "a", "ignored")
+        seed_setting(conn, "b", True)
+    with connection(path) as conn:
+        assert get_setting(conn, "a") == {"x": [3]}
+        assert get_setting(conn, "b") is True
+
+
+def test_env_values_seed_but_do_not_override(env):
+    env = replace(env, plex_url="http://plex.local:32400/", plex_token="env-token")
+    app = create_app(env)
+    with TestClient(app):
+        pass
+    with connection(app.state.db_path) as conn:
+        assert get_setting(conn, "plex.url") == "http://plex.local:32400"
+        set_setting(conn, "plex.token", "ui-token")
+    with TestClient(create_app(env)):
+        pass
+    with connection(app.state.db_path) as conn:
+        assert get_setting(conn, "plex.token") == "ui-token"
+
+
+def test_connection_can_close_in_another_thread(tmp_path):
+    import threading
+
+    path = tmp_path / "test.db"
+    migrate(path)
+    context = connection(path)
+    conn = context.__enter__()
+    errors = []
+
+    def finish():
+        try:
+            conn.execute("SELECT 1")
+            context.__exit__(None, None, None)
+        except Exception as exc:
+            errors.append(exc)
+
+    thread = threading.Thread(target=finish)
+    thread.start()
+    thread.join()
+    assert errors == []

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Clean up · Collections · {{ app_name }}{% endblock %}
+{% block content %}
+{% with tab = "plex" %}{% include "partials/collections_header.html" %}{% endwith %}
+{% if not libraries %}
+<div class="alert">{{ icon('alert') }}<div>Plex is not reachable: libraries can't be listed.</div></div>
+{% endif %}
+<div class="order-grid">
+  {% for lib in libraries %}
+  <section class="card">
+    <div class="card-header"><h2 class="card-title">{{ icon('film' if lib.type == 'movie' else 'tv') }}{{ lib.title }}</h2></div>
+    <div hx-get="/collections/plex/{{ lib.key }}" hx-trigger="load" hx-swap="outerHTML">
+      <div class="skeleton skeleton-line" style="width:70%"></div><div class="skeleton skeleton-line" style="width:50%"></div>
+    </div>
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+<section class="card" id="schedule-card">
+  <div class="card-header">
+    <h2 class="card-title">{{ icon('clock') }}Schedule</h2>
+    {% if schedule.enabled %}<span class="badge ok"><span class="dot"></span>Every {{ schedule.every_hours }} h</span>
+    {% else %}<span class="badge"><span class="dot"></span>Paused</span>{% endif %}
+  </div>
+  <form class="sync-form">
+    <label class="field inline-field">
+      <span class="field-label">Sync every</span>
+      <select name="every_hours">
+        {% for hours in intervals %}
+        <option value="{{ hours }}" {{ 'selected' if hours == schedule.every_hours }}>{{ hours }} hour{{ 's' if hours > 1 }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <div class="actions">
+      {% if schedule.enabled %}
+      <button class="btn" type="button" hx-post="{{ schedule_url }}" hx-target="#schedule-card" hx-swap="outerHTML" hx-disabled-elt="this" hx-vals='{"enabled": "1"}'>{{ icon('check', 16) }}Save</button>
+      <button class="btn" type="button" hx-post="{{ schedule_url }}" hx-target="#schedule-card" hx-swap="outerHTML" hx-disabled-elt="this" hx-vals='{"enabled": ""}'>{{ icon('x', 16) }}Pause</button>
+      {% else %}
+      <button class="btn btn-primary" type="button" hx-post="{{ schedule_url }}" hx-target="#schedule-card" hx-swap="outerHTML" hx-disabled-elt="this" hx-vals='{"enabled": "1"}'>{{ icon('play', 16) }}Turn on</button>
+      {% endif %}
+    </div>
+  </form>
+  <p class="muted small" style="margin-top:12px">
+    {% if schedule.enabled %}Next sync {{ schedule.next_at | until }}: {{ schedule_what }}
+    {% else %}Automatic syncs are off. When on: {{ schedule_what }}{% endif %}
+    {% if saved %}<span class="text-ok">Saved.</span>{% endif %}
+  </p>
+</section>

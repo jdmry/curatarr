@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Auto sync · Posters · {{ app_name }}{% endblock %}
+{% block content %}
+{% with tab = "sync" %}{% include "partials/posters_header.html" %}{% endwith %}
+<div class="stack">
+  <div hx-get="/sync/card" hx-trigger="load" hx-swap="outerHTML">
+    <section class="card"><div class="skeleton skeleton-line" style="width:30%;margin:0 0 16px"></div>
+      <div class="skeleton" style="height:64px"></div></section>
+  </div>
+  <div hx-get="/sync/schedule" hx-trigger="load" hx-swap="outerHTML">
+    <section class="card"><div class="skeleton skeleton-line" style="width:30%;margin:0"></div></section>
+  </div>
+  {% include "partials/activity.html" %}
+</div>
+{% endblock %}

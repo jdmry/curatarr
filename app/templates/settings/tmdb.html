@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}TMDB · Settings · {{ app_name }}{% endblock %}
+{% block content %}
+{% with tab = "tmdb" %}{% include "partials/settings_header.html" %}{% endwith %}
+
+<section class="card">
+  <div class="card-header">
+    <h2 class="card-title">{{ icon('film') }}TMDB</h2>
+    {% if has_key %}<span class="badge ok"><span class="dot"></span>Configured</span>
+    {% else %}<span class="badge"><span class="dot"></span>Not configured</span>{% endif %}
+  </div>
+  <p class="muted" style="margin:0 0 16px">Needed for TMDB lists in Collections (trending, popular, TMDB lists).
+    MDBList lists work without it.</p>
+  <form>
+    <label class="field">
+      <span class="field-label">API key</span>
+      <input type="password" name="key" autocomplete="off"
+             placeholder="{{ 'Saved. Leave empty to keep it.' if has_key else 'API key or API read access token' }}">
+      <span class="field-help">Free: create a TMDB account, then
+        <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener">Settings → API</a>.
+        Either the API key or the read access token works.</span>
+    </label>
+    <div class="actions">
+      <button class="btn btn-primary" type="button" hx-post="/settings/tmdb" hx-include="closest form"
+              hx-target="#tmdb-check" hx-disabled-elt="this">{{ icon('check', 16) }}Check and save</button>
+    </div>
+  </form>
+  <div id="tmdb-check"></div>
+</section>
+{% endblock %}

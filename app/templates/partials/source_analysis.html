@@ -1,0 +1,24 @@
+{% if analysis is none %}
+{% elif analysis.error %}
+<div class="analysis"><span class="muted">{{ analysis.error }}</span></div>
+{% else %}
+<div class="analysis">
+  <div class="analysis-row">
+    {% if analysis.kind == 'postersplus' %}<span class="badge accent">{{ icon('check', 12) }}PostersPlus detected</span>
+    {% else %}<span class="badge">Image URL</span>{% endif %}
+    {% for name in analysis.variables %}<span class="chip{{ ' bad' if name in analysis.unknown }}">{{ '{' ~ name ~ '}' }}</span>{% endfor %}
+  </div>
+  {% for change in analysis.changes %}
+  <div class="analysis-note ok">{{ icon('check', 14) }}{{ change }}</div>
+  {% endfor %}
+  {% for name in analysis.secret_params %}
+  <div class="analysis-note">{{ icon('lock', 14) }}<code>{{ name }}</code>&nbsp;is hidden in the interface and logs</div>
+  {% endfor %}
+  {% for warning in analysis.warnings %}
+  <div class="analysis-note warn">{{ icon('alert', 14) }}{{ warning }}</div>
+  {% endfor %}
+  {% if analysis.kind == 'postersplus' and analysis.changes %}
+  <p class="muted small">Saved with these changes. {{ app_name }} reads the quality from your files, so PostersPlus never guesses it.</p>
+  {% endif %}
+</div>
+{% endif %}

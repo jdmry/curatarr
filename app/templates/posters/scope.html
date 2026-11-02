@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Libraries · Posters · {{ app_name }}{% endblock %}
+{% block content %}
+{% with tab = "scope" %}{% include "partials/posters_header.html" %}{% endwith %}
+<p class="muted section-intro">Tick whole libraries or only some collections. Changes save instantly.</p>
+
+<div id="scope-libraries" hx-get="/posters/scope/libraries" hx-trigger="load" hx-swap="outerHTML" class="stack">
+  {% for _ in range(2) %}
+  <section class="card"><div class="skeleton skeleton-line" style="width:25%;margin:0 0 16px"></div>
+    <div class="skeleton" style="height:44px"></div></section>
+  {% endfor %}
+</div>
+
+<p class="muted small" style="margin-top:16px">
+  A title in several selected places is processed once. A collection's own service wins over its library's.
+</p>
+{% endblock %}

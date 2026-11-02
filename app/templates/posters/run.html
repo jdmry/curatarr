@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% set labels = {'apply': 'Would update' if run.mode == 'test' else 'Updated', 'unchanged': 'Unchanged', 'skipped': 'Skipped', 'error': 'Error'} %}
+{% block title %}Sync #{{ run.id }} · {{ app_name }}{% endblock %}
+{% block content %}
+<header class="page-header">
+  <div>
+    <h1>{{ 'Test sync' if run.mode == 'test' else 'Sync' }} #{{ run.id }}</h1>
+    <p class="subtitle">Started {{ run.started_at | ago }}{% if run.finished_at %} · took {{ run.started_at | duration(run.finished_at) }}{% endif %}
+      {% if run.mode == 'test' %}· nothing was sent to Plex{% endif %}</p>
+  </div>
+  <a class="btn btn-ghost" href="/posters/history">{{ icon('arrow-left', 16) }}History</a>
+</header>
+
+{% if run.error %}<div class="alert error" style="margin-bottom:16px">{{ icon('x') }}<div>{{ run.error }}</div></div>{% endif %}
+
+<nav class="tabs">
+  {% for key, label, value in [('', 'All', run.total), ('apply', labels['apply'], run.applied), ('unchanged', 'Unchanged', run.unchanged), ('skipped', 'Skipped', run.skipped), ('error', 'Errors', run.errors)] %}
+  <a href="?action={{ key }}" class="tab{{ ' active' if action == key }}">{{ label }} <span class="badge">{{ value }}</span></a>
+  {% endfor %}
+</nav>
+
+<section class="card flush">
+  {% if not items %}
+  <p class="muted" style="padding:20px">Nothing here.</p>
+  {% else %}
+  <div class="table-wrap">
+  <table class="table results">
+    <thead><tr><th></th><th>Title</th><th>Source</th><th>Quality</th><th>Result</th></tr></thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td class="thumb-cell"><div class="result-thumb">{% if item.thumb %}<img src="/plex/image?path={{ item.thumb | urlencode }}&w=72&h=108" alt="" loading="lazy">{% endif %}</div></td>
+        <td>
+          <strong>{{ item.title }}</strong>{% if item.year %} <span class="muted">({{ item.year }})</span>{% endif %}
+          <div class="muted small">{{ item.library }}</div>
+          {% if item.url %}<details class="url-details"><summary class="small">URL</summary><code>{{ item.url }}</code></details>{% endif %}
+        </td>
+        <td class="muted">{{ item.source_name or '—' }}</td>
+        <td>{% for q in item.quality.split(',') if q %}<span class="chip">{{ q }}</span> {% else %}<span class="muted">—</span>{% endfor %}</td>
+        <td>
+          <span class="badge {{ {'apply': 'accent', 'skipped': 'warn', 'error': 'error'}.get(item.action, '') }}">{{ labels[item.action] }}</span>
+          {% if item.reason %}<div class="muted small reason">{{ item.reason }}</div>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% endif %}
+</section>
+
+{% if pages > 1 %}
+<div class="actions" style="margin-top:16px;justify-content:center">
+  {% if page_no > 1 %}<a class="btn" href="?action={{ action }}&page={{ page_no - 1 }}">{{ icon('arrow-left', 16) }}Previous</a>{% endif %}
+  <span class="muted small">Page {{ page_no }} of {{ pages }} · {{ total }} titles</span>
+  {% if page_no < pages %}<a class="btn" href="?action={{ action }}&page={{ page_no + 1 }}">Next{{ icon('arrow-right', 16) }}</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

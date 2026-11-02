@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Poster services · {{ app_name }}{% endblock %}
+{% block content %}
+{% with tab = "services" %}{% include "partials/settings_header.html" %}{% endwith %}
+{% if sources %}
+<div class="section-bar">
+  <p class="muted">Where posters come from. Libraries use the default one unless they pick another.</p>
+  <a class="btn btn-primary" href="/settings/services/new">{{ icon('plus', 16) }}Add a poster service</a>
+</div>
+{% endif %}
+
+{% if not sources %}
+<section class="card empty">
+  <div class="empty-icon">{{ icon('image', 28) }}</div>
+  <h2>No poster service yet</h2>
+  <p class="muted">PostersPlus, RPDB, or any service that returns an image for a movie or show id.</p>
+  <a class="btn btn-primary" href="/settings/services/new">{{ icon('plus', 16) }}Add your first poster service</a>
+</section>
+{% else %}
+<div class="stack">
+  {% for source in sources %}
+  <section class="card source-card">
+    <div class="source-icon">{{ icon('image', 20) }}</div>
+    <div class="source-body">
+      <div class="source-title">
+        <a href="/settings/services/{{ source.id }}"><strong>{{ source.name }}</strong></a>
+        {% if source.name != source.kind_label %}<span class="muted small">{{ source.kind_label }}</span>{% endif %}
+        {% if source.is_default %}<span class="badge ok"><span class="dot"></span>Default</span>{% endif %}
+      </div>
+      <code class="url-preview">{{ source.masked_template }}</code>
+    </div>
+    <div class="actions source-actions">
+      <a class="btn" href="/settings/services/{{ source.id }}">Edit &amp; test</a>
+      {% if not source.is_default %}
+      <form method="post" action="/settings/services/{{ source.id }}/default"><button class="btn btn-ghost">Make default</button></form>
+      {% endif %}
+      <form method="post" action="/settings/services/{{ source.id }}/delete" onsubmit="return confirm('Delete {{ source.name }}?')">
+        <button class="btn btn-ghost danger" title="Delete">{{ icon('trash', 16) }}</button>
+      </form>
+    </div>
+  </section>
+  {% endfor %}
+</div>
+<p class="muted small" style="margin-top:16px">The default service applies everywhere, unless a library or collection picks another one in Posters → Libraries.</p>
+{% endif %}
+{% endblock %}

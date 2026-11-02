@@ -1,0 +1,15 @@
+{% if error %}
+<p class="field-help text-error">{{ error }}</p>
+{% elif not catalogs %}
+<p class="field-help">This addon has no movie or show catalog to use.</p>
+{% else %}
+<label class="field">
+  <span class="field-label">Catalog</span>
+  <select name="stremio_catalog" onchange="if (this.value) this.form.name.value = this.selectedOptions[0].dataset.name">
+    <option value="">Pick a catalog…</option>
+    {% for value, name in catalogs %}
+    <option value="{{ value }}" data-name="{{ name }}" {{ 'selected' if value == selected }}>{{ name }}</option>
+    {% endfor %}
+  </select>
+</label>
+{% endif %}

@@ -1,0 +1,28 @@
+<div id="hubs-{{ library_key }}">
+  {% if error %}
+  <div class="alert error">{{ icon('x') }}<div>{{ error }}</div></div>
+  {% elif not hubs %}
+  <p class="muted small">No rows.</p>
+  {% else %}
+  <ol class="hub-list">
+    {% for hub in hubs %}
+    <li class="hub-row{{ ' ours' if hub.identifier in ours }}{{ ' hidden-hub' if not (hub.promotedToOwnHome or hub.promotedToRecommended or hub.promotedToSharedHome) }}">
+      <span class="hub-title">{{ hub.title }}{% if hub.identifier in ours %} <span class="badge accent">{{ app_name }}</span>{% endif %}</span>
+      <span class="hub-flags">
+        {% if hub.promotedToOwnHome %}<span class="badge ok">Home</span>{% endif %}
+        {% if hub.promotedToSharedHome %}<span class="badge">Friends</span>{% endif %}
+        {% if hub.promotedToRecommended %}<span class="badge">Recommended</span>{% endif %}
+      </span>
+      <span class="hub-moves">
+        <button class="btn btn-ghost icon-btn" type="button" title="Move up" {{ 'disabled' if loop.first }}
+                hx-post="/collections/order/{{ library_key }}/move" hx-vals='{"identifier": "{{ hub.identifier }}", "direction": "up"}'
+                hx-target="#hubs-{{ library_key }}" hx-swap="outerHTML" hx-disabled-elt="this">{{ icon('arrow-up', 16) }}</button>
+        <button class="btn btn-ghost icon-btn" type="button" title="Move down" {{ 'disabled' if loop.last }}
+                hx-post="/collections/order/{{ library_key }}/move" hx-vals='{"identifier": "{{ hub.identifier }}", "direction": "down"}'
+                hx-target="#hubs-{{ library_key }}" hx-swap="outerHTML" hx-disabled-elt="this">{{ icon('arrow-down', 16) }}</button>
+      </span>
+    </li>
+    {% endfor %}
+  </ol>
+  {% endif %}
+</div>

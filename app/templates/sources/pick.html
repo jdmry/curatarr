@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Add a poster service · {{ app_name }}{% endblock %}
+{% block content %}
+<header class="page-header">
+  <div>
+    <h1>Add a poster service</h1>
+    <p class="subtitle">Which service do your posters come from?</p>
+  </div>
+  <a class="btn btn-ghost" href="/settings/services">{{ icon('arrow-left', 16) }}Poster services</a>
+</header>
+<div class="pick-grid">
+  <a class="card pick-card" href="/settings/services/new?kind=postersplus">
+    <strong>PostersPlus</strong>
+    <span class="muted small">Paste the URL from its configurator (Copy config). Quality badges come from your files.</span>
+  </a>
+  <a class="card pick-card" href="/settings/services/new?kind=rpdb">
+    <strong>RPDB</strong>
+    <span class="muted small">Rating Poster Database: posters with ratings. Needs your RPDB API key.</span>
+  </a>
+  <a class="card pick-card" href="/settings/services/new?kind=generic">
+    <strong>Other image URL</strong>
+    <span class="muted small">Any service that returns an image for a movie or show id: write its URL with placeholders.</span>
+  </a>
+</div>
+{% endblock %}

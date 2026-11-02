@@ -1,0 +1,18 @@
+services:
+  curatarr:
+    image: ghcr.io/jdmry/curatarr:latest
+    # Or build from a clone of the repository instead:
+    # build: .
+    container_name: curatarr
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/data
+    environment:
+      # User/group owning the files in /data (Unraid: 99 / 100).
+      PUID: "1000"
+      PGID: "1000"
+      # Optional: initial Plex connection (can be set in the UI instead).
+      # PLEX_URL: http://192.168.1.10:32400
+      # PLEX_TOKEN: your-plex-token
+    restart: unless-stopped

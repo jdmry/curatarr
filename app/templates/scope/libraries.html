@@ -1,0 +1,25 @@
+<div class="stack" id="scope-libraries">
+{% if error %}
+  <div class="alert error">{{ icon('x') }}<div>{{ error }} <a href="/settings/plex">Check the settings</a></div></div>
+{% else %}
+  {% for library in libraries %}
+  {% set key = library.key | string %}
+  <section class="card">
+    <div class="card-header">
+      <h2 class="card-title">{{ icon('film' if library.type == 'movie' else 'tv') }}{{ library.title }}</h2>
+      <span class="badge">{{ "{:,}".format(library.totalSize) }} {{ 'movies' if library.type == 'movie' else 'shows' }}</span>
+    </div>
+    {% set entry = selected.get((key, '')) %}
+    {% with entry = entry or {'library_key': key, 'library_title': library.title, 'collection_key': '', 'collection_title': '', 'source_id': None, 'is_library': True},
+            enabled = entry is not none, count = library.totalSize %}
+      {% include "scope/row.html" %}
+    {% endwith %}
+    <details class="disclosure collections-box" hx-get="/posters/scope/libraries/{{ key }}/collections" hx-trigger="toggle once"
+             hx-target="find .collections" hx-swap="innerHTML">
+      <summary>Collections{% if collection_counts.get(key) %} <span class="badge accent">{{ collection_counts[key] }} selected</span>{% endif %}</summary>
+      <div class="collections"><p class="muted small"><span class="spinner"></span> Loading collections…</p></div>
+    </details>
+  </section>
+  {% endfor %}
+{% endif %}
+</div>

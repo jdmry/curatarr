@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit poster service' if source.id else 'Add a poster service' }} · {{ app_name }}{% endblock %}
+{% block content %}
+<header class="page-header">
+  <div>
+    <h1>{{ source.name if source.id else 'Add ' ~ kinds[kind] if kind != 'generic' else 'Add an image URL service' }}</h1>
+    <p class="subtitle">{{ 'Fill in your key, try it on a title, save.' if kind == 'rpdb' else 'Paste a URL, try it on a title, save.' }}</p>
+  </div>
+  <a class="btn btn-ghost" href="/settings/services">{{ icon('arrow-left', 16) }}Poster services</a>
+</header>
+
+{% if error %}<div class="alert error" style="margin-bottom:16px">{{ icon('x') }}<div>{{ error }}</div></div>{% endif %}
+
+<div class="grid-2">
+  <form id="source-form" class="card" method="post" action="{{ '/settings/services/%d' % source.id if source.id else '/settings/services' }}">
+    <input type="hidden" name="editing_id" value="{{ source.id or '' }}">
+    <input type="hidden" name="kind" value="{{ kind }}">
+
+    {% if kind == 'rpdb' %}
+    <label class="field">
+      <span class="field-label">API key</span>
+      <input name="rpdb_key" value="{{ rpdb_options.key }}" required autocomplete="off" spellcheck="false">
+      <span class="field-help">From your RPDB account. Hidden once saved.</span>
+    </label>
+    <div class="form-grid">
+      <label class="field">
+        <span class="field-label">Style</span>
+        <select name="rpdb_style">
+          {% for value, label in rpdb_styles.items() %}<option value="{{ value }}" {{ 'selected' if value == rpdb_options.style }}>{{ label }}</option>{% endfor %}
+        </select>
+        <span class="field-help">Free keys only have Default.</span>
+      </label>
+      <label class="field">
+        <span class="field-label">Size</span>
+        <select name="rpdb_size">
+          {% for value, label in rpdb_sizes.items() %}<option value="{{ value }}" {{ 'selected' if value == rpdb_options.size }}>{{ label }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-label">Language</span>
+        <input name="rpdb_lang" value="{{ rpdb_options.lang }}" placeholder="Default (en, fr, pt-BR…)">
+        <span class="field-help">Tier 1+.</span>
+      </label>
+    </div>
+    <label class="check">
+      <input type="checkbox" name="rpdb_fallback" value="1" {{ 'checked' if rpdb_options.fallback }}>
+      <span><strong>Plain poster when there are no ratings</strong>
+        <span class="field-help">Otherwise those titles are skipped.</span></span>
+    </label>
+    <p class="muted small">Titles are looked up by IMDb id; titles without one are skipped.</p>
+    {% else %}
+    <label class="field">
+      <span class="field-label">{{ 'PostersPlus URL' if kind == 'postersplus' else 'Poster URL' }}</span>
+      <textarea name="url" rows="6" required spellcheck="false" autocomplete="off"
+                placeholder="https://example.com/poster?tmdb_id={tmdb_id}&amp;type={type}"
+                hx-post="/settings/services/analyze" hx-trigger="input changed delay:400ms, load" hx-target="#analysis">{{ url }}</textarea>
+    </label>
+    {% if kind == 'postersplus' %}<span class="field-help">In the PostersPlus configurator: Copy config, then paste it here.</span>{% endif %}
+    <div id="analysis"></div>
+
+    <details class="disclosure">
+      <summary>Available placeholders</summary>
+      <table class="table compact">
+        <tbody>
+          {% for name, desc in variables.items() %}
+          <tr><td><code>{{ '{' ~ name ~ '}' }}</code></td><td class="muted">{{ desc }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p class="muted small">Write <code>{name?}</code> or <code>{name}</code>: in the query string, a parameter whose value is
+        missing is dropped; in the path, the title is skipped.</p>
+    </details>
+
+    <label class="check" style="margin-top:18px">
+      <input type="checkbox" name="read_quality" value="1" {{ 'checked' if source.read_quality }}>
+      <span>
+        <strong>Read quality from files</strong>
+        <span class="field-help">Fills <code>{quality}</code> with 4K, DV, ATMOS… from the actual file. Turn it off if your
+          posters don't show quality badges: syncing gets much faster.</span>
+      </span>
+    </label>
+    {% endif %}
+
+    <label class="field" style="margin-top:18px">
+      <span class="field-label">Name</span>
+      <input name="name" value="{{ source.name }}" placeholder="Defaults to the service name">
+    </label>
+
+    {% if kind != 'rpdb' %}
+    <details class="disclosure">
+      <summary>Advanced</summary>
+      <div class="form-grid" style="margin-top:12px">
+        <label class="field">
+          <span class="field-label"><code>{type}</code> for movies</span>
+          <input name="type_movie" value="{{ source.type_movie }}">
+        </label>
+        <label class="field">
+          <span class="field-label"><code>{type}</code> for shows</span>
+          <input name="type_show" value="{{ source.type_show }}">
+        </label>
+        <label class="field">
+          <span class="field-label">No quality value</span>
+          <input name="no_quality" value="{{ source.no_quality }}" placeholder="Empty: drop the parameter">
+          <span class="field-help">Sent as <code>{quality}</code> when nothing is detected. PostersPlus gets NONE automatically.</span>
+        </label>
+        <label class="field">
+          <span class="field-label">Timeout (seconds)</span>
+          <input name="timeout" type="number" min="5" max="600" value="{{ source.timeout }}">
+        </label>
+      </div>
+      <label class="field">
+        <span class="field-label">HTTP headers</span>
+        <textarea name="headers" rows="3" spellcheck="false" placeholder="X-Api-Key: your-key">{{ headers_text }}</textarea>
+        <span class="field-help">One per line, <code>Name: value</code>. Values are hidden once saved.</span>
+      </label>
+    </details>
+    {% endif %}
+
+    <div class="actions" style="margin-top:20px">
+      <button class="btn btn-primary" type="submit">{{ icon('check', 16) }}Save</button>
+      <a class="btn btn-ghost" href="/settings/services">Cancel</a>
+    </div>
+  </form>
+
+  <section class="card">
+    <div class="card-header"><h2 class="card-title">{{ icon('search') }}Try it on a title</h2></div>
+    <input type="search" name="q" placeholder="Search your Plex library…" autocomplete="off"
+           hx-get="/settings/services/titles" hx-trigger="input changed delay:350ms, search" hx-target="#title-results"
+           hx-indicator="#search-busy">
+    <div id="search-busy" class="htmx-indicator muted small" style="gap:8px;align-items:center;margin-top:10px">
+      <span class="spinner"></span>Searching…
+    </div>
+    <div id="title-results" class="result-list">
+      <p class="muted small">Pick a movie or show to see its poster from this service. Nothing is sent to Plex.</p>
+    </div>
+  </section>
+</div>
+
+<div id="test-busy" class="htmx-indicator card" style="margin-top:16px;gap:10px;align-items:center">
+  <span class="spinner"></span>Rendering the poster… Some services take a while.
+</div>
+<div id="test-result"></div>
+{% endblock %}

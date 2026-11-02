@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · {{ app_name }}{% endblock %}
+{% block content %}
+<header class="page-header">
+  <div>
+    <h1>Dashboard</h1>
+    <p class="subtitle">What {{ app_name }} is doing.</p>
+  </div>
+</header>
+
+<div class="stack">
+  {% if plex_configured %}
+  <div hx-get="/dashboard/recap" hx-trigger="load" hx-swap="outerHTML">
+    <section class="card"><div class="stats">
+      {% for _ in range(4) %}
+      <div class="stat"><div class="stat-icon skeleton"></div>
+        <div style="flex:1"><div class="skeleton skeleton-line" style="width:50%"></div><div class="skeleton skeleton-line" style="width:80%;height:18px"></div></div>
+      </div>
+      {% endfor %}
+    </div></section>
+  </div>
+  {% endif %}
+  {% include "partials/activity.html" %}
+</div>
+{% endblock %}

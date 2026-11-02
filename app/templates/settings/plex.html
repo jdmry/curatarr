@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Settings · {{ app_name }}{% endblock %}
+{% block content %}
+{% with tab = "plex" %}{% include "partials/settings_header.html" %}{% endwith %}
+
+<section class="card">
+  <div class="card-header">
+    <h2 class="card-title">{{ icon('server') }}Plex server</h2>
+    {% if has_token %}<span class="badge ok"><span class="dot"></span>Configured</span>
+    {% else %}<span class="badge warn"><span class="dot"></span>Not configured</span>{% endif %}
+  </div>
+
+  <form hx-post="/settings/plex" hx-target="#plex-check" hx-disabled-elt="find button">
+    <div class="form-grid">
+      <label class="field">
+        <span class="field-label">Server URL</span>
+        <input name="url" value="{{ plex_url }}" placeholder="http://192.168.1.10:32400" required>
+        <span class="field-help">Usually your server's local IP followed by port 32400.</span>
+      </label>
+      <label class="field">
+        <span class="field-label">Token</span>
+        <input type="password" name="token" autocomplete="off"
+               placeholder="{{ 'Saved. Leave empty to keep it.' if has_token else 'Your X-Plex-Token' }}"
+               {{ '' if has_token else 'required' }}>
+        <span class="field-help">
+          <a href="https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/"
+             target="_blank" rel="noopener">How to find your Plex token</a>
+        </span>
+      </label>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" type="submit">{{ icon('check', 16) }}Save</button>
+      <button class="btn" type="button" hx-post="/settings/plex/test" hx-include="closest form"
+              hx-target="#plex-check">{{ icon('plug', 16) }}Test connection</button>
+      <span class="htmx-indicator muted small" style="gap:8px;align-items:center"><span class="spinner"></span>Connecting to Plex…</span>
+    </div>
+  </form>
+  <div id="plex-check"></div>
+</section>
+{% endblock %}

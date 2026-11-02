@@ -1,0 +1,32 @@
+<div id="plex-collections-{{ library_key }}">
+  {% if notice %}<div class="alert ok">{{ icon('check') }}<div>{{ notice }}</div></div>{% endif %}
+  {% if error %}<div class="alert error">{{ icon('x') }}<div>{{ error }}</div></div>{% endif %}
+  {% if rows is not none %}
+  {% if not rows %}
+  <p class="muted small">No collections.</p>
+  {% else %}
+  <ul class="hub-list">
+    {% for row in rows %}
+    <li class="hub-row{{ ' ours' if row.list }}">
+      <span class="hub-title">{{ row.title }}</span>
+      <span class="hub-flags">
+        {% if row.origin %}<span class="badge{{ ' accent' if row.list }}">{{ row.origin }}</span>{% endif %}
+        {% if row.smart %}<span class="badge">Smart</span>{% endif %}
+        <span class="muted small">{{ row.count }} title{{ 's' if row.count != 1 }}</span>
+      </span>
+      <span class="hub-moves">
+        {% if row.list %}
+        <a class="btn btn-ghost icon-btn" href="/collections/lists/{{ row.list.id }}" title="Edit the list {{ row.list.name }}">{{ icon('arrow-right', 16) }}</a>
+        {% else %}
+        <button class="btn btn-ghost icon-btn danger" type="button" title="Delete from Plex"
+                hx-post="/collections/plex/{{ library_key }}/delete" hx-vals='{"rating_key": "{{ row.key }}"}'
+                hx-confirm="Delete the collection {{ row.title }} from Plex? The titles in it stay in your library."
+                hx-target="#plex-collections-{{ library_key }}" hx-swap="outerHTML" hx-disabled-elt="this">{{ icon('trash', 16) }}</button>
+        {% endif %}
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% endif %}
+</div>

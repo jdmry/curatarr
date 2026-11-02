@@ -1,0 +1,57 @@
+{% set labels = {'apply': 'Would update' if run and run.mode == 'test' else 'Updated', 'unchanged': 'Unchanged', 'skipped': 'Skipped', 'error': 'Errors'} %}
+<section class="card" id="sync-card"
+         {% if running %}hx-get="/sync/card" hx-trigger="every 2s" hx-swap="outerHTML"{% endif %}>
+  <div class="card-header">
+    <h2 class="card-title">{{ icon('refresh') }}Sync</h2>
+    {% if running %}<span class="badge accent"><span class="spinner" style="width:10px;height:10px"></span>Running</span>
+    {% elif run and run.status == 'failed' %}<span class="badge error"><span class="dot"></span>Last run failed</span>
+    {% elif run %}<span class="badge"><span class="dot"></span>Idle</span>{% endif %}
+  </div>
+
+  {% if not has_scope and not running %}
+  <div class="alert" style="margin-bottom:16px">{{ icon('alert') }}<div>Nothing is picked yet: choose what gets posters in
+    <a href="/posters/scope">Libraries</a> first.</div></div>
+  {% endif %}
+  {% if error %}<div class="alert error" style="margin-bottom:16px">{{ icon('x') }}<div>{{ error }}</div></div>{% endif %}
+
+  {% if run %}
+  <div class="run-summary">
+    <div class="run-meta">
+      <span class="badge {{ 'accent' if run.mode == 'test' else 'ok' }}">{{ 'Test' if run.mode == 'test' else 'Live' }}</span>
+      <span class="muted small">
+        {% if running %}Started {{ run.started_at | ago }}{% else %}{{ run.finished_at | ago }}{% if run.finished_at %} · took {{ run.started_at | duration(run.finished_at) }}{% endif %}{% endif %}
+      </span>
+      <a class="small" href="/posters/history/{{ run.id }}" style="margin-left:auto">View results {{ icon('arrow-right', 14) }}</a>
+    </div>
+    <div class="counters">
+      <div><span class="counter-value">{{ run.total }}</span><span class="counter-label">Titles</span></div>
+      <div class="c-apply"><span class="counter-value">{{ run.applied }}</span><span class="counter-label">{{ labels['apply'] }}</span></div>
+      <div><span class="counter-value">{{ run.unchanged }}</span><span class="counter-label">Unchanged</span></div>
+      <div class="c-skipped"><span class="counter-value">{{ run.skipped }}</span><span class="counter-label">Skipped</span></div>
+      <div class="c-error"><span class="counter-value">{{ run.errors }}</span><span class="counter-label">Errors</span></div>
+    </div>
+    {% if run.status == 'failed' and run.error %}<div class="alert error" style="margin-top:12px">{{ icon('x') }}<div>{{ run.error }}</div></div>{% endif %}
+    {% if run.status == 'cancelled' %}<p class="muted small" style="margin-top:8px">Cancelled.</p>{% endif %}
+  </div>
+  {% endif %}
+
+  {% if running %}
+  <div class="actions" style="margin-top:16px">
+    <button class="btn" hx-post="/sync/cancel" hx-target="#sync-card" hx-swap="outerHTML">{{ icon('x', 16) }}Cancel</button>
+  </div>
+  {% else %}
+  <form class="sync-form">
+    <label class="field inline-field">
+      <span class="field-label">Titles</span>
+      <input type="number" name="max_items" min="0" value="{{ run.max_items if run and run.max_items else 20 }}">
+    </label>
+    <div class="actions">
+      <button class="btn" type="button" hx-post="/sync/test" hx-target="#sync-card" hx-swap="outerHTML" hx-disabled-elt="this">{{ icon('search', 16) }}Run test</button>
+      <button class="btn btn-primary" type="button" hx-post="/sync/live" hx-target="#sync-card" hx-swap="outerHTML" hx-disabled-elt="this">{{ icon('play', 16) }}Sync to Plex</button>
+    </div>
+  </form>
+  <p class="muted small" style="margin-top:12px">Only the first titles of the scope are processed, 0 means all.
+    A test shows what would change without touching Plex. A sync uploads the new posters: Plex keeps the old ones,
+    so you can still pick them back in Plex.</p>
+  {% endif %}
+</section>

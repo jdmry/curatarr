@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="htmx-config" content='{"disableInheritance": true}'>
+  <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ asset('app.css') }}">
+  <script src="{{ asset('vendor/htmx.min.js') }}" defer></script>
+  <script src="{{ asset('vendor/htmx-ext-sse.js') }}" defer></script>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <a class="brand" href="/"><img src="{{ asset('favicon.svg') }}" alt="">{{ app_name }}</a>
+    <nav class="nav">
+      {% set links = [
+        ("dashboard", "/", "Dashboard", "dashboard", False),
+        ("posters", "/posters", "Posters", "image", False),
+        ("collections", "/collections", "Collections", "gallery", False),
+        ("settings", "/settings", "Settings", "settings", False),
+      ] %}
+      {% for key, href, label, icon_name, soon in links %}
+      <a class="nav-link{{ ' active' if active == key }}{{ ' soon' if soon }}" href="{{ href }}"
+         {{ 'aria-current="page"' | safe if active == key }}>
+        {{ icon(icon_name) }}<span>{{ label }}</span>{% if soon %}<span class="pill">Soon</span>{% endif %}
+      </a>
+      {% endfor %}
+    </nav>
+    <div class="sidebar-footer">{{ app_name }} {{ app_version }}</div>
+  </aside>
+  <main class="content">
+    {% for banner in banners or [] %}
+    <div class="banner">{{ icon('alert') }}<span>{{ banner.message }}</span>
+      <a class="btn btn-primary" href="{{ banner.href }}">{{ banner.action }}{{ icon('arrow-right', 16) }}</a>
+    </div>
+    {% endfor %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+</body>
+</html>

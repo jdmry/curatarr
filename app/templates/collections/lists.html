@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Collections · {{ app_name }}{% endblock %}
+{% block content %}
+{% with tab = "lists" %}{% include "partials/collections_header.html" %}{% endwith %}
+<div class="stack">
+  {% include "partials/lists_panel.html" %}
+  {% if lists %}
+  <div hx-get="/collections/schedule" hx-trigger="load" hx-swap="outerHTML">
+    <section class="card"><div class="skeleton skeleton-line" style="width:30%;margin:0"></div></section>
+  </div>
+  {% include "partials/activity.html" %}
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,5 @@
+"""Single place for the app's name. Rename the app here only."""
+
+APP_NAME = "Curatarr"
+APP_SLUG = "curatarr"
+APP_VERSION = "0.1.0"

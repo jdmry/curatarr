@@ -1,0 +1,17 @@
+<label class="field">
+  <span class="field-label">MDBList list</span>
+  {% if error %}
+  <span class="field-help text-error">{{ error }}</span>
+  {% else %}
+  <select name="mdblist_list" onchange="if (this.value) { this.form.mdblist_url.value = ''; this.form.name.value = this.selectedOptions[0].dataset.name; }">
+    <option value="">Pick a list…</option>
+    {% for label, lists in groups if lists %}
+    <optgroup label="{{ label }}">
+      {% for id, name, count in lists %}
+      <option value="{{ id }}" data-name="{{ name }}" {{ 'selected' if id == selected }}>{{ name }}{% if count %} ({{ count }}){% endif %}</option>
+      {% endfor %}
+    </optgroup>
+    {% endfor %}
+  </select>
+  {% endif %}
+</label>
