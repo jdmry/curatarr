@@ -172,3 +172,29 @@ def test_sync_of_some_collections_only(client, app, server):
         run = conn.execute("SELECT * FROM runs ORDER BY id DESC").fetchone()
     assert run["status"] == "done" and run["total"] == 2
     assert any("titles of Marvel" in line.message for line in app.state.events.tail(10))
+
+
+def test_title_is_tried_again_once_when_plex_times_out(client, app, server, monkeypatch):
+    import requests
+
+    from app.sync import runner
+
+    add_source(app)
+    with connection(app.state.db_path) as conn:
+        set_scope_entry(conn, ScopeEntry("1", "Movies"), True)
+    calls = {}
+    real = runner.evaluate
+
+    def slow_plex(target, previous=None):
+        title = target.item.title
+        calls[title] = calls.get(title, 0) + 1
+        if title == "Movie 2" or (title == "Movie 1" and calls[title] == 1):
+            raise requests.exceptions.ReadTimeout("Read timed out. (read timeout=15)")
+        return real(target, previous)
+
+    monkeypatch.setattr(runner, "evaluate", slow_plex)
+    run, items = run_test(client, app, max_items="0")
+    assert (run["applied"], run["errors"]) == (4, 1) and calls["Movie 1"] == 2 and calls["Movie 2"] == 2
+    assert any(line.message == "Movie 2: Plex did not answer within 15 s, the next sync will try again"
+               for line in app.state.events.tail(20))
+

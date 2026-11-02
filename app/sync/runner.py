@@ -12,6 +12,8 @@ from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass
 from pathlib import Path
 
+import requests
+
 from app import db
 from app.plex import client as plex
 from app.posters import fetch
@@ -195,9 +197,12 @@ class SyncRunner:
         name = target.item.title
         source = target.source
         try:
-            outcome = evaluate(target, previous)
+            try:
+                outcome = evaluate(target, previous)
+            except requests.exceptions.Timeout:  # Plex is sometimes busy for a moment
+                outcome = evaluate(target, previous)
         except Exception as exc:
-            reason = mask(f"{type(exc).__name__}: {exc}", source.secrets)
+            reason = _reason(exc, source.secrets)
             return Result(target, Outcome("error", reason=reason), "error", f"{name}: {reason}")
 
         if outcome.action == "skipped":
@@ -217,7 +222,7 @@ class SyncRunner:
         try:
             upload(target.item, image.content)
         except Exception as exc:
-            reason = mask(f"Upload to Plex failed: {type(exc).__name__}: {exc}", source.secrets)
+            reason = f"Upload to Plex failed: {_reason(exc, source.secrets)}"
             outcome.action, outcome.reason = "error", reason
             return Result(target, outcome, "error", f"{name}: {reason}")
         return Result(target, outcome, "ok", f"{name}: poster updated from {source.name} ({quality}){why}")
@@ -234,3 +239,10 @@ class SyncRunner:
                 outcome.masked_url,
             ),
         )
+
+
+def _reason(exc: Exception, secrets: list[str]) -> str:
+    if isinstance(exc, requests.exceptions.Timeout):
+        return f"Plex did not answer within {plex.TIMEOUT} s, the next sync will try again"
+    return mask(f"{type(exc).__name__}: {exc}", secrets)
+

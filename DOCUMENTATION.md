@@ -168,7 +168,7 @@ Everything is set up in the web UI. Environment variables are optional.
 | Tag | What it is |
 |---|---|
 | `latest` | The latest release. |
-| `0.1.2`, `0.1` | A given release. |
+| `0.1.3`, `0.1` | A given release. |
 | `edge` | The latest commit on `main`. May break. |
 
 Images are built for `linux/amd64` and `linux/arm64`.
