@@ -161,13 +161,14 @@ Everything is set up in the web UI. Environment variables are optional.
 | `PORT` | `8080` | HTTP port inside the container. |
 | `DATA_DIR` | `/data` | Where the database is stored. |
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warning` or `error`. |
+| `UPDATE_CHECK` | `true` | Once a day, ask GitHub for the latest release and show **Update available** in the sidebar. `false` turns it off. |
 
 ### Image tags
 
 | Tag | What it is |
 |---|---|
 | `latest` | The latest release. |
-| `0.1.1`, `0.1` | A given release. |
+| `0.1.2`, `0.1` | A given release. |
 | `edge` | The latest commit on `main`. May break. |
 
 Images are built for `linux/amd64` and `linux/arm64`.
@@ -186,4 +187,4 @@ DATA_DIR=./data python -m app
 To build the image yourself, use `build: .` instead of `image:` in `docker-compose.example.yml`.
 
 **Releasing**: bump `APP_VERSION` in `app/branding.py`, then tag the commit `vX.Y.Z` and push the tag.
-GitHub Actions runs the tests and publishes the image.
+GitHub Actions runs the tests, publishes the image and creates the GitHub release.

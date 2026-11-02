@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app.branding import APP_NAME, APP_SLUG, APP_VERSION
+from app.branding import APP_NAME, APP_SLUG, APP_VERSION, REPO_URL
 from app.config import Env, load_env
 from app.db import connection, migrate
 from app.settings_store import seed_setting
@@ -15,6 +15,7 @@ from app.lists.runner import ListRunner
 from app.sync.events import EventLog
 from app.sync.runner import SyncRunner, mark_interrupted_runs
 from app.sync.scheduler import LISTS_SCHEDULE, Scheduler
+from app.updates import UpdateCheck
 from app.web import collections, dashboard, plex_images, scope, settings, sources, sync, titles
 from app.web.assets import asset
 from app.web.formatting import ago, duration, until
@@ -63,7 +64,9 @@ def create_app(env: Env | None = None) -> FastAPI:
     app.state.db_path = env.data_dir / f"{APP_SLUG}.db"
 
     templates = Jinja2Templates(directory=BASE_DIR / "templates")
-    templates.env.globals.update(app_name=APP_NAME, app_version=APP_VERSION, icon=icon, asset=asset, active=None)
+    app.state.updates = UpdateCheck(env.update_check)
+    templates.env.globals.update(app_name=APP_NAME, app_version=APP_VERSION, repo_url=REPO_URL, icon=icon, asset=asset,
+                                 active=None, newer_version=app.state.updates.newer)
     templates.env.filters.update(ago=ago, duration=duration, until=until)
     app.state.templates = templates
 

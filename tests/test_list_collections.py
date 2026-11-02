@@ -322,3 +322,31 @@ def test_form_offers_mdblist_lists_with_a_key(client, app, plex_server, monkeypa
     html = client.get("/collections/mdblist?selected=top7").text
     assert '<optgroup label="Your lists">' in html and '<optgroup label="Popular on MDBList">' in html
     assert 'value="top7" data-name="top list" selected' in html
+
+
+def test_poster_sync_starts_after_the_writes_are_saved(client, app, plex_server, monkeypatch):
+    """The poster sync writes from its own connection: the list sync must not hold the database."""
+    import sqlite3
+
+    from app.plex import sharing
+
+    monkeypatch.setattr(sharing, "friends", lambda *a: [])
+    starts = []
+
+    class WritingPosters(FakePosters):
+        def start(self, mode, only=None):
+            other = sqlite3.connect(app.state.db_path, timeout=0.1)
+            other.execute("BEGIN IMMEDIATE")
+            other.rollback()
+            other.close()
+            starts.append(mode)
+
+    app.state.list_runner.posters = WritingPosters()
+    saved = run(client, app, "live")
+    with connection(app.state.db_path) as conn:
+        set_scope_entry(conn, ScopeEntry("1", "Movies", saved.collection_key, "Top", None, True), True)
+        conn.execute("UPDATE lists SET audience = 'owner'")  # the friends' step then saves a setting
+    run(client, app, "live")
+    assert starts == ["live"]
+    assert not any("failed" in line.message for line in app.state.events.tail(20))
+

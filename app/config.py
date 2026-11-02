@@ -17,6 +17,7 @@ class Env:
     plex_url: str | None
     plex_token: str | None
     log_level: str
+    update_check: bool = True
 
 
 def _optional(name: str) -> str | None:
@@ -31,4 +32,5 @@ def load_env() -> Env:
         plex_url=_optional("PLEX_URL"),
         plex_token=_optional("PLEX_TOKEN"),
         log_level=os.environ.get("LOG_LEVEL", "info").lower(),
+        update_check=os.environ.get("UPDATE_CHECK", "true").strip().lower() not in ("0", "false", "no", "off"),
     )

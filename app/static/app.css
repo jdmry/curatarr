@@ -109,7 +109,10 @@ code { font-family: var(--mono); font-size: .92em; }
 .nav-link.soon { pointer-events: none; color: var(--faint); }
 .nav-link .pill { margin-left: auto; }
 
-.sidebar-footer { margin-top: auto; padding: 10px; color: var(--faint); font-size: 12px; }
+.sidebar-footer { margin-top: auto; padding: 10px; color: var(--faint); font-size: 12px; display: grid; gap: 6px; }
+.sidebar-footer a { color: inherit; }
+.sidebar-footer a:hover { color: var(--text); }
+.sidebar-footer .update-link { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); font-weight: 600; }
 
 .content { width: 100%; max-width: 1240px; padding: 32px 40px 56px; }
 

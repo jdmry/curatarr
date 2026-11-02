@@ -195,5 +195,5 @@ class FakeServer:
         return item
 
     def fetchItems(self, path):
-        keys = path.rsplit("/", 1)[1].split(",")
+        keys = path.rsplit("=", 1)[1].split(",") if "?id=" in path else path.rsplit("/", 1)[1].split(",")
         return [i for s in self._sections for i in s.items if str(i.ratingKey) in keys]

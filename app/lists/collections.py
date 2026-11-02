@@ -81,12 +81,16 @@ def plan(collection, config: ListConfig, wanted: list[str]) -> Plan:
     return result
 
 
-def fetch_items(server, keys: list[str]) -> list:
-    """Plex items for these rating keys, in this order; titles gone from Plex are left out."""
+def fetch_items(server, section, keys: list[str]) -> list:
+    """Plex items for these rating keys, in this order; titles gone from Plex are left out.
+
+    The library listing filtered by id is enough to build a collection, and much
+    lighter for Plex than the full metadata of each title.
+    """
     found = {}
     for start in range(0, len(keys), FETCH_BATCH):
         batch = keys[start:start + FETCH_BATCH]
-        for item in server.fetchItems(f"/library/metadata/{','.join(batch)}"):
+        for item in server.fetchItems(f"/library/sections/{section.key}/all?id={','.join(batch)}"):
             found[str(item.ratingKey)] = item
     return [found[key] for key in keys if key in found]
 

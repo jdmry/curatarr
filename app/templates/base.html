@@ -28,7 +28,11 @@
       </a>
       {% endfor %}
     </nav>
-    <div class="sidebar-footer">{{ app_name }} {{ app_version }}</div>
+    <div class="sidebar-footer">
+      <a href="{{ repo_url }}/releases" target="_blank" rel="noopener">{{ app_name }} {{ app_version }}</a>
+      {% set newer = newer_version() %}
+      {% if newer %}<a class="update-link" href="{{ repo_url }}/releases/tag/v{{ newer }}" target="_blank" rel="noopener">{{ icon('arrow-up', 14) }}Update available: {{ newer }}</a>{% endif %}
+    </div>
   </aside>
   <main class="content">
     {% for banner in banners or [] %}

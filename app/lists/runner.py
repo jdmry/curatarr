@@ -106,6 +106,7 @@ class ListRunner:
             self._sync_sharing(conn, server, http, connection.token, live)
         self.events.add("ok", f"{name} done")
         if self._refresh and self.posters is not None:
+            conn.commit()  # the poster sync writes from its own connection
             try:
                 self.posters.start("live", only=self._refresh)
             except AlreadyRunning:
@@ -149,7 +150,7 @@ class ListRunner:
             f"Indexing {section.title}: once a day, up to a minute or two on big libraries"))
         result = match(conn, config.library_key, section.type, fetched.items)
         keys = [key for _, key in result.owned][:config.max_items]
-        wanted = collections.fetch_items(server, keys)
+        wanted = collections.fetch_items(server, section, keys)
         if len(wanted) < len(keys):
             forget_index(conn, config.library_key)  # titles gone from Plex: rebuild the index next time
 
