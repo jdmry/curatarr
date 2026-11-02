@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Log in · {{ app_name }}</title>
+  <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ asset('app.css') }}">
+</head>
+<body>
+<main class="auth">
+  <div class="auth-brand"><img src="{{ asset('favicon.svg') }}" alt="">{{ app_name }}</div>
+  <section class="card">
+    {% if setup_error %}
+    <h1 class="auth-title">No admin account yet</h1>
+    <div class="alert error">{{ icon('lock') }}<div>{{ setup_error }}</div></div>
+    <p class="muted small">The account is made from these variables at the first start. After that, change it in
+      Settings → Account.</p>
+    {% else %}
+    <h1 class="auth-title">Log in</h1>
+    {% if error %}<div class="alert error">{{ icon('x') }}<div>{{ error }}</div></div>{% endif %}
+    <form method="post" action="/login" class="stack">
+      <input type="hidden" name="next" value="{{ next }}">
+      <label class="field">
+        <span class="field-label">Username</span>
+        <input name="username" value="{{ username or '' }}" autocomplete="username" required autofocus>
+      </label>
+      <label class="field">
+        <span class="field-label">Password</span>
+        <input type="password" name="password" autocomplete="current-password" required>
+      </label>
+      <button class="btn btn-primary" type="submit">Log in</button>
+    </form>
+    {% endif %}
+  </section>
+</main>
+</body>
+</html>

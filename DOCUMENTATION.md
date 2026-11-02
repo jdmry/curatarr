@@ -24,6 +24,8 @@ services:
     volumes:
       - ./data:/data
     environment:
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: change-me-please
       PUID: "1000"
       PGID: "1000"
     restart: unless-stopped
@@ -33,19 +35,30 @@ services:
 
 ```sh
 docker run -d --name curatarr -p 8080:8080 -v ./data:/data \
+  -e ADMIN_USERNAME=admin -e ADMIN_PASSWORD=change-me-please \
   -e PUID=1000 -e PGID=1000 --restart unless-stopped ghcr.io/jdmry/curatarr:latest
 ```
 
 ### Unraid
 
 Add a container with the repository `ghcr.io/jdmry/curatarr:latest`, port `8080`, a path mapped to `/data`
-(for example `/mnt/user/appdata/curatarr`), and the variables `PUID=99` and `PGID=100`.
+(for example `/mnt/user/appdata/curatarr`), and the variables `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `PUID=99` and
+`PGID=100`.
 
-### Security
+### Login
 
-**There is no login.** Anyone who can open the app can change your Plex posters and collections. Keep it on
-your local network, or put it behind your reverse proxy's authentication (basic auth, Authelia,
-Authentik…). Don't expose port 8080 to the internet.
+Every page needs a login, except `/health` (for Docker health checks).
+
+- **The admin account is made at the first start** from `ADMIN_USERNAME` and `ADMIN_PASSWORD` (8 characters at
+  least). Without them, the app only shows which variables are missing.
+- **After that, change it in Settings → Account.** The variables are then ignored: changing them does nothing.
+  You can remove `ADMIN_PASSWORD` from your compose file.
+- **Forgot the password?** Run `docker exec -it curatarr python -m app.reset_password`.
+- A login lasts 30 days. Changing the password logs out every other browser. After 5 wrong passwords, an
+  address has to wait 15 minutes.
+
+Put the app behind HTTPS (your reverse proxy) when it is reachable from the internet, so the password and the
+session cookie are never sent in clear.
 
 ### Updating
 
@@ -55,6 +68,8 @@ stays in `/data`.
 ## Getting started
 
 Open the app: a banner at the top tells you what is missing.
+
+Log in with the admin account (see [Login](#login)), then:
 
 1. **Settings → Plex**: the URL the app uses to reach Plex (often `http://<server-ip>:32400`) and your
    [Plex token](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/).
@@ -151,10 +166,11 @@ see everything.
 
 ## Configuration
 
-Everything is set up in the web UI. Environment variables are optional.
+Everything is set up in the web UI. Only the admin account variables are needed, at the first start.
 
 | Variable | Default | Purpose |
 |---|---|---|
+| `ADMIN_USERNAME` / `ADMIN_PASSWORD` | – | The admin account, made at the first start. Ignored once it exists. |
 | `PUID` / `PGID` | `1000` / `1000` | User and group owning the files in `/data`. |
 | `PLEX_URL` | – | Initial Plex URL, e.g. `http://192.168.1.10:32400`. Only used until it's set in the UI. |
 | `PLEX_TOKEN` | – | Initial Plex token. Only used until it's set in the UI. |
@@ -168,7 +184,7 @@ Everything is set up in the web UI. Environment variables are optional.
 | Tag | What it is |
 |---|---|
 | `latest` | The latest release. |
-| `0.1.3`, `0.1` | A given release. |
+| `0.2.0`, `0.2` | A given release. |
 | `edge` | The latest commit on `main`. May break. |
 
 Images are built for `linux/amd64` and `linux/arm64`.

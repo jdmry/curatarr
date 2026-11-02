@@ -18,6 +18,8 @@ class Env:
     plex_token: str | None
     log_level: str
     update_check: bool = True
+    admin_username: str | None = None  # make the admin account at the first start
+    admin_password: str | None = None
 
 
 def _optional(name: str) -> str | None:
@@ -32,5 +34,7 @@ def load_env() -> Env:
         plex_url=_optional("PLEX_URL"),
         plex_token=_optional("PLEX_TOKEN"),
         log_level=os.environ.get("LOG_LEVEL", "info").lower(),
+        admin_username=_optional("ADMIN_USERNAME"),
+        admin_password=os.environ.get("ADMIN_PASSWORD") or None,
         update_check=os.environ.get("UPDATE_CHECK", "true").strip().lower() not in ("0", "false", "no", "off"),
     )

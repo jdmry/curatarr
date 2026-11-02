@@ -1,0 +1,23 @@
+<form id="account-form" class="stack" hx-post="/settings/account" hx-target="this" hx-swap="outerHTML">
+  {% if error %}<div class="alert error">{{ icon('x') }}<div>{{ error }}</div></div>{% endif %}
+  {% if saved %}<div class="alert ok">{{ icon('check') }}<div>Saved.</div></div>{% endif %}
+  <div class="form-grid">
+    <label class="field">
+      <span class="field-label">Username</span>
+      <input name="username" value="{{ username }}" autocomplete="username" required>
+    </label>
+    <label class="field">
+      <span class="field-label">Current password</span>
+      <input type="password" name="current_password" autocomplete="current-password" required>
+    </label>
+    <label class="field">
+      <span class="field-label">New password</span>
+      <input type="password" name="new_password" autocomplete="new-password" placeholder="Leave empty to keep it">
+    </label>
+    <label class="field">
+      <span class="field-label">Confirm the new password</span>
+      <input type="password" name="confirm_password" autocomplete="new-password">
+    </label>
+  </div>
+  <div class="actions"><button class="btn btn-primary" type="submit">{{ icon('check', 16) }}Save</button></div>
+</form>

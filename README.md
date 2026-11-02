@@ -14,7 +14,7 @@
   badges read from your files. Keep them up to date on a schedule, or do one title by hand.
 - **Collections**: turn MDBList, TMDB or Stremio addon lists into Plex collections, on your Home or in
   Recommended, for everyone, only you, or one friend. Reorder your Home rows and clean up old collections.
-- **Safe**: a test mode shows what would change before anything is sent to Plex.
+- **Safe**: a login protects every page, and a test mode shows what would change before anything is sent to Plex.
 - **Simple**: one container, set up in the web UI. No YAML.
 
 ## Install
@@ -28,14 +28,14 @@ services:
       - "8080:8080"
     volumes:
       - ./data:/data
+    environment:
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: change-me-please
     restart: unless-stopped
 ```
 
-Run `docker compose up -d`, then open `http://<your-server>:8080`.
-
-> [!WARNING]
-> **There is no login.** Keep the app on your local network, or put it behind your reverse proxy's
-> authentication. Don't expose port 8080 to the internet.
+Run `docker compose up -d`, open `http://<your-server>:8080` and log in. The admin account is made from
+`ADMIN_USERNAME` and `ADMIN_PASSWORD` at the first start; change it later in **Settings → Account**.
 
 ## Getting started
 

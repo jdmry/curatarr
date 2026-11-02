@@ -1,9 +1,9 @@
 <header class="page-header">
   <div>
     <h1>Settings</h1>
-    <p class="subtitle">Your Plex server, the services posters come from, and the TMDB and MDBList keys.</p>
+    <p class="subtitle">Your Plex server, the services posters come from, and the TMDB and MDBList keys, and your account.</p>
   </div>
 </header>
-{% with tabs = [("plex", "/settings/plex", "Plex"), ("services", "/settings/services", "Poster services"), ("tmdb", "/settings/tmdb", "TMDB"), ("mdblist", "/settings/mdblist", "MDBList")] %}
+{% with tabs = [("plex", "/settings/plex", "Plex"), ("services", "/settings/services", "Poster services"), ("tmdb", "/settings/tmdb", "TMDB"), ("mdblist", "/settings/mdblist", "MDBList"), ("account", "/settings/account", "Account")] %}
   {% include "partials/tabs.html" %}
 {% endwith %}

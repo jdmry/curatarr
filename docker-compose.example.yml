@@ -9,6 +9,9 @@ services:
     volumes:
       - ./data:/data
     environment:
+      # The admin account, made at the first start. Change it later in Settings → Account.
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: change-me-please
       # User/group owning the files in /data (Unraid: 99 / 100).
       PUID: "1000"
       PGID: "1000"

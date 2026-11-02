@@ -112,6 +112,8 @@ code { font-family: var(--mono); font-size: .92em; }
 .sidebar-footer { margin-top: auto; padding: 10px; color: var(--faint); font-size: 12px; display: grid; gap: 6px; }
 .sidebar-footer a { color: inherit; }
 .sidebar-footer a:hover { color: var(--text); }
+.sidebar-footer .link-button { background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; }
+.sidebar-footer .link-button:hover { color: var(--text); }
 .sidebar-footer .update-link { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); font-weight: 600; }
 
 .content { width: 100%; max-width: 1240px; padding: 32px 40px 56px; }
@@ -686,3 +688,12 @@ form .form-step:not(:first-child) { margin-top: 24px; }
 .chip-radio input:checked + span { border-color: var(--accent); color: var(--accent); }
 .input-row { display: flex; gap: 8px; }
 .input-row input { flex: 1; min-width: 0; }
+
+/* Login */
+
+.auth { max-width: 380px; margin: 12vh auto 0; padding: 0 16px; }
+.auth-brand { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; font-size: 20px; font-weight: 700; }
+.auth-brand img { width: 32px; height: 32px; }
+.auth-title { margin: 0 0 16px; font-size: 18px; }
+.auth .btn { width: 100%; justify-content: center; }
+.auth .alert + p { margin-top: 12px; }

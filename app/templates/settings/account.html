@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Account · Settings · {{ app_name }}{% endblock %}
+{% block content %}
+{% with tab = "account" %}{% include "partials/settings_header.html" %}{% endwith %}
+
+<section class="card">
+  <div class="card-header"><h2 class="card-title">{{ icon('lock') }}Admin account</h2></div>
+  <p class="muted" style="margin:0 0 16px">The only account of this app. Changing the password logs out every other
+    browser. Forgot it? Run <code>docker exec -it {{ app_slug }} python -m app.reset_password</code>.</p>
+  {% include "partials/account_form.html" %}
+</section>
+{% endblock %}

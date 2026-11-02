@@ -31,6 +31,9 @@
     <div class="sidebar-footer">
       <a href="{{ repo_url }}/releases" target="_blank" rel="noopener">{{ app_name }} {{ app_version }}</a>
       {% set newer = newer_version() %}
+      {% if request.state.user %}
+      <form method="post" action="/logout"><button class="link-button" type="submit">Log out {{ request.state.user.username }}</button></form>
+      {% endif %}
       {% if newer %}<a class="update-link" href="{{ repo_url }}/releases/tag/v{{ newer }}" target="_blank" rel="noopener">{{ icon('arrow-up', 14) }}Update available: {{ newer }}</a>{% endif %}
     </div>
   </aside>
