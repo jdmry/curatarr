@@ -75,9 +75,12 @@ Log in with the admin account (see [Login](#login)), then:
    [Plex token](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/).
    **Test connection** checks them without saving.
 2. **Settings → Poster services**: add one (see below).
-3. **Posters → Libraries**: tick what gets posters.
-4. **Posters → Auto sync**: **Run test** on a few titles, check, then **Sync to Plex**.
-5. **Collections → Lists**: add a list, **Preview** it, save, then **Sync to Plex**.
+3. **Collections → Lists**: add a list, **Preview** it, save, then **Sync to Plex**.
+4. **Posters → Collections**: tick the collections that get posters.
+5. **Posters → Auto sync**: **Run test** on a few titles, check, then **Sync to Plex**.
+
+In **Settings → Plex**, untick the libraries you don't use: they disappear from the app (lists, searches,
+dashboard). Nothing changes in Plex.
 
 ## Posters
 
@@ -97,13 +100,13 @@ URLs and header values are hidden in the interface and the logs.
 If your posters don't show quality badges, untick **Read quality from files**: reading it costs one Plex
 request per title, so syncs get much faster without it.
 
-The default service is used everywhere, unless a library or collection picks another one.
+The default service is used everywhere, unless a collection picks another one.
 
 ### Tabs
 
 | Tab | What it does |
 |---|---|
-| **Libraries** | Tick whole libraries or only some collections, each with the default service or another one. A collection's own service wins over its library's. A title in several ticked places is processed once. A collection made by one of your lists also offers **Sync posters on each collection sync**: its titles get their posters right after each sync of the list. |
+| **Collections** | The collections made by your lists. Tick the ones that get posters, each with the default service or another one. **Sync posters on each collection sync** sends their posters right after each sync of the list. A title in several ticked collections is processed once. Whole libraries can't be picked: a sync would read every title of the library each time. |
 | **Auto sync** | **Run test** shows what would change, live, without touching Plex. **Sync to Plex** sends the new posters. Both only process the number of titles you enter (0 = all). Set a schedule (every 1, 3, 6, 12 or 24 hours) to keep them up to date: scheduled syncs process all titles. |
 | **Manual** | Find any movie or show, compare its current poster with the new one, and apply it. |
 | **History** | Every sync, with what was (or would be) changed for each title. |
@@ -184,7 +187,7 @@ Everything is set up in the web UI. Only the admin account variables are needed,
 | Tag | What it is |
 |---|---|
 | `latest` | The latest release. |
-| `0.2.0`, `0.2` | A given release. |
+| `0.3.0`, `0.3` | A given release. |
 | `edge` | The latest commit on `main`. May break. |
 
 Images are built for `linux/amd64` and `linux/arm64`.

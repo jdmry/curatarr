@@ -1,0 +1,21 @@
+<section class="card" id="plex-libraries" style="margin-top:16px">
+  <div class="card-header">
+    <h2 class="card-title">{{ icon('library') }}Libraries</h2>
+    {% if saved %}<span class="badge ok"><span class="dot"></span>Saved</span>{% endif %}
+  </div>
+  {% if error %}
+  <p class="muted" style="margin:0">{{ error }}</p>
+  {% else %}
+  <p class="muted" style="margin:0 0 12px">The libraries {{ app_name }} shows. Untick the ones you don't use: they
+    disappear from lists, searches and the dashboard. Nothing changes in Plex.</p>
+  <form class="stack" hx-post="/settings/plex/libraries" hx-trigger="change" hx-target="#plex-libraries" hx-swap="outerHTML">
+    {% for library in libraries %}
+    <label class="check">
+      <input type="checkbox" name="shown" value="{{ library.key }}" {{ 'checked' if library.key not in hidden }}>
+      <span>{{ library.title }} <span class="muted small">· {{ 'Movies' if library.type == 'movie' else 'Shows' }} ·
+        {{ "{:,}".format(library.size) }} titles</span></span>
+    </label>
+    {% endfor %}
+  </form>
+  {% endif %}
+</section>

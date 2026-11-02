@@ -172,17 +172,24 @@ def test_picked_collection_follows_its_list_and_gets_posters(client, app, plex_s
         assert list_scope(conn) == []
 
 
-def test_refresh_tick_only_for_list_collections(client, app, plex_server):
+def test_poster_scope_is_list_collections_only(client, app, plex_server):
+    assert "No collection yet" in client.get("/posters/scope").text
     saved = run(client, app, "live")
+    page = client.get("/posters/scope").text
+    assert "Top" in page and "Movies" in page and "Sync posters on each collection sync" in page
+
     data = {"library_key": "1", "library_title": "Movies", "collection_key": saved.collection_key,
             "collection_title": "Top", "enabled": "1", "refresh_posters": "1"}
-    html = client.post("/posters/scope/entry", data={**data, "linked": "1"}).text
-    assert "Sync posters on each collection sync" in html
+    row = client.post("/posters/scope/entry", data=data).text
+    assert 'class="scope-row on"' in row and 'hx-target="this"' in row
     with connection(app.state.db_path) as conn:
-        assert list_scope(conn)[0].refresh_posters
-    client.post("/posters/scope/entry", data=data)
+        assert list_scope(conn) == [ScopeEntry("1", "Movies", saved.collection_key, "Top", None, True)]
+    for other in ({**data, "collection_key": ""}, {**data, "collection_key": "999"}):
+        assert client.post("/posters/scope/entry", data=other).status_code == 400
+
     with connection(app.state.db_path) as conn:
-        assert not list_scope(conn)[0].refresh_posters
+        conn.execute("INSERT INTO settings (key, value) VALUES ('plex.hidden_libraries', '[\"1\"]')")
+    assert "No collection yet" in client.get("/posters/scope").text
 
 class FakeManagedHub:
     def __init__(self, hubs, identifier, title, home=False):

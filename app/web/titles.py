@@ -27,7 +27,7 @@ def search(request: Request, db: sqlite3.Connection, q: str, pick: str):
     if connection is None:
         return render(request, "partials/title_results.html", error="Plex is not configured.", results=[], **context)
     try:
-        results = titles.search_titles(plex.get_server(connection), query)
+        results = titles.search_titles(plex.get_server(connection), query, hidden=plex.hidden_libraries(db))
     except Exception as exc:
         plex.forget_server()
         error = plex.describe_error(exc, connection)

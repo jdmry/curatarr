@@ -26,10 +26,10 @@
     <div class="stat">
       <div class="stat-icon">{{ icon('target') }}</div>
       <div>
-        <div class="stat-label">Libraries</div>
-        {% if scope_libraries or scope_collections %}
-        <div class="stat-value">{{ scope_libraries + scope_collections }}</div>
-        <div class="stat-hint">{{ scope_libraries }} {{ 'library' if scope_libraries == 1 else 'libraries' }} · {{ scope_collections }} {{ 'collection' if scope_collections == 1 else 'collections' }}</div>
+        <div class="stat-label">Posters for</div>
+        {% if scope_collections %}
+        <div class="stat-value">{{ scope_collections }}</div>
+        <div class="stat-hint">{{ 'collection' if scope_collections == 1 else 'collections' }}</div>
         {% else %}
         <div class="stat-value muted">None</div>
         <div class="stat-hint"><a href="/posters/scope">Choose what to sync</a></div>

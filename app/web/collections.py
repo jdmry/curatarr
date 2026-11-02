@@ -132,7 +132,7 @@ def _libraries(db: sqlite3.Connection):
     if connection is None:
         return []
     try:
-        return plex.cached_overview(connection)[2]
+        return plex.visible(db, plex.cached_overview(connection)[2])
     except Exception:
         plex.forget_server()
         return []

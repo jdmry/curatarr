@@ -173,7 +173,7 @@ class ListRunner:
         return summary
 
     def _posters(self, conn: sqlite3.Connection, config: ListConfig, key: str | None) -> None:
-        """Keep the collection's entry in Posters → Libraries in step, and queue its posters."""
+        """Keep the collection's entry in Posters → Collections in step, and queue its posters."""
         picked = _picked(conn, {k for k in (key, config.collection_key) if k})
         if picked is None:
             return

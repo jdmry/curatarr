@@ -31,6 +31,32 @@ def _form_connection(db: sqlite3.Connection, url: str, token: str) -> plex.PlexC
     return plex.PlexConnection(plex.normalize_url(url), token.strip())
 
 
+@router.get("/settings/plex/libraries")
+def libraries_card(request: Request, db: sqlite3.Connection = Depends(get_db)):
+    return _libraries_card(request, db)
+
+
+@router.post("/settings/plex/libraries")
+def save_libraries(request: Request, shown: list[str] = Form([]), db: sqlite3.Connection = Depends(get_db)):
+    """Every library not ticked is hidden, including ones added to Plex later only once they show up here."""
+    return _libraries_card(request, db, shown=set(shown))
+
+
+def _libraries_card(request: Request, db: sqlite3.Connection, shown: set[str] | None = None):
+    connection = plex.load_connection(db)
+    if connection is None:
+        return render(request, "partials/plex_libraries.html", error="Connect Plex first.")
+    try:
+        libraries = plex.cached_overview(connection)[2]
+    except Exception as exc:
+        plex.forget_server()
+        return render(request, "partials/plex_libraries.html", error=plex.describe_error(exc, connection))
+    if shown is not None:
+        set_setting(db, plex.HIDDEN_LIBRARIES, sorted(lib.key for lib in libraries if lib.key not in shown))
+    return render(request, "partials/plex_libraries.html", libraries=libraries, hidden=plex.hidden_libraries(db),
+                  saved=shown is not None)
+
+
 @router.post("/settings/plex/test")
 def test_plex(request: Request, url: str = Form(""), token: str = Form(""), db: sqlite3.Connection = Depends(get_db)):
     connection = _form_connection(db, url, token)

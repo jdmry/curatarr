@@ -37,4 +37,10 @@
   </form>
   <div id="plex-check"></div>
 </section>
+
+{% if has_token %}
+<div id="plex-libraries" hx-get="/settings/plex/libraries" hx-trigger="load" hx-swap="outerHTML" style="margin-top:16px">
+  <section class="card"><div class="skeleton skeleton-line" style="width:30%"></div></section>
+</div>
+{% endif %}
 {% endblock %}

@@ -124,7 +124,7 @@ def test_title_search(client, app, monkeypatch):
     with connection(app.state.db_path) as conn:
         save_connection(conn, "http://plex:32400", "tok")
     dune = SimpleNamespace(ratingKey=42, title="Dune", year=2021, TYPE="movie", thumb="/library/metadata/42/thumb/1")
-    section = SimpleNamespace(type="movie", title="Films", search=lambda title, maxresults: [dune])
+    section = SimpleNamespace(key="1", type="movie", title="Films", search=lambda title, maxresults: [dune])
     music = SimpleNamespace(type="artist", title="Music", search=lambda **kw: pytest.fail("music searched"))
     server = SimpleNamespace(library=SimpleNamespace(sections=lambda: [section, music]))
     monkeypatch.setattr(plex, "get_server", lambda conn: server)

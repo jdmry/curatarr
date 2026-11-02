@@ -4,7 +4,7 @@
 {% with tab = "services" %}{% include "partials/settings_header.html" %}{% endwith %}
 {% if sources %}
 <div class="section-bar">
-  <p class="muted">Where posters come from. Libraries use the default one unless they pick another.</p>
+  <p class="muted">Where posters come from. Collections use the default one unless they pick another.</p>
   <a class="btn btn-primary" href="/settings/services/new">{{ icon('plus', 16) }}Add a poster service</a>
 </div>
 {% endif %}
@@ -41,6 +41,6 @@
   </section>
   {% endfor %}
 </div>
-<p class="muted small" style="margin-top:16px">The default service applies everywhere, unless a library or collection picks another one in Posters → Libraries.</p>
+<p class="muted small" style="margin-top:16px">The default service applies everywhere, unless a collection picks another one in Posters → Collections.</p>
 {% endif %}
 {% endblock %}

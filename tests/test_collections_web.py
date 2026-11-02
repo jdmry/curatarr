@@ -121,3 +121,18 @@ def test_picked_source_makes_the_list(client, app, server, monkeypatch):
                        "stremio_manifest": "https://addon.test/***/manifest.json", "stremio_catalog": "movie/nfx"}).text
     assert 'value="movie/nfx" data-name="Netflix" selected' in html
 
+
+def test_hidden_libraries(client, app, server):
+    from app.plex.client import hidden_libraries
+
+    card = client.get("/settings/plex/libraries").text
+    assert 'value="1" checked' in card and "Movies" in card
+    card = client.post("/settings/plex/libraries", data={}).text
+    assert 'value="1" checked' not in card and "Saved" in card
+    with connection(app.state.db_path) as conn:
+        assert hidden_libraries(conn) == {"1"}
+    assert '<option value="1"' not in client.get("/collections/lists/new").text
+
+    client.post("/settings/plex/libraries", data={"shown": "1"})
+    assert '<option value="1"' in client.get("/collections/lists/new").text
+

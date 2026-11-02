@@ -34,12 +34,11 @@ def test_recap(client, app, configured, monkeypatch):
     ])
     with connection(app.state.db_path) as conn:
         save_source(conn, PosterSource(None, "PP", "https://p.test/{imdb_id}.jpg", read_quality=False))
-        set_scope_entry(conn, ScopeEntry("1", "Films"), True)
         set_scope_entry(conn, ScopeEntry("1", "Films", "9", "Marvel"), True)
 
     html = client.get("/dashboard/recap").text
     assert "Home" in html and "1,280" in html and "1,200 movies · 80 shows" in html
-    assert "1 library · 1 collection" in html and "Never" in html
+    assert "Posters for" in html and "collection</div>" in html and "Never" in html
     assert "tok" not in html
     client.get("/dashboard/recap")
     assert calls == [1]  # second load served from the cache
@@ -59,9 +58,9 @@ def test_posters_banners(client, app, configured):
     with connection(app.state.db_path) as conn:
         save_source(conn, PosterSource(None, "PP", "https://p.test/{imdb_id}.jpg"))
     html = client.get("/posters/sync").text
-    assert "Add a poster service" not in html and "Choose what to sync" in html
+    assert "Add a poster service" not in html and "Choose collections" in html
     with connection(app.state.db_path) as conn:
-        set_scope_entry(conn, ScopeEntry("1", "Films"), True)
+        set_scope_entry(conn, ScopeEntry("1", "Films", "9", "Marvel"), True)
     assert 'class="banner"' not in client.get("/posters/sync").text
     assert 'class="banner"' not in client.get("/posters/history").text
 

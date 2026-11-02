@@ -17,10 +17,10 @@ class SearchResult:
     thumb: str | None
 
 
-def search_titles(server, query: str, per_library: int = 8) -> list[SearchResult]:
+def search_titles(server, query: str, per_library: int = 8, hidden: set[str] = frozenset()) -> list[SearchResult]:
     results = []
     for section in server.library.sections():
-        if section.type not in ("movie", "show"):
+        if section.type not in ("movie", "show") or str(section.key) in hidden:
             continue
         for item in section.search(title=query, maxresults=per_library):
             results.append(SearchResult(

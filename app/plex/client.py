@@ -49,6 +49,19 @@ def normalize_url(url: str) -> str:
     return url.strip().rstrip("/")
 
 
+HIDDEN_LIBRARIES = "plex.hidden_libraries"
+
+
+def hidden_libraries(conn: sqlite3.Connection) -> set[str]:
+    """Keys of the libraries left out of the app (Settings → Plex)."""
+    return set(get_setting(conn, HIDDEN_LIBRARIES, []))
+
+
+def visible(conn: sqlite3.Connection, libraries: list) -> list:
+    hidden = hidden_libraries(conn)
+    return [lib for lib in libraries if str(lib.key) not in hidden]
+
+
 def load_connection(conn: sqlite3.Connection) -> PlexConnection | None:
     url, token = get_setting(conn, "plex.url"), get_setting(conn, "plex.token")
     return PlexConnection(url, token) if url and token else None

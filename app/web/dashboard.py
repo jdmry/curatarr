@@ -25,7 +25,6 @@ def dashboard(request: Request, db: sqlite3.Connection = Depends(get_db)):
 def dashboard_recap(request: Request, db: sqlite3.Connection = Depends(get_db)):
     entries = list_scope(db)
     context = {
-        "scope_libraries": sum(1 for e in entries if e.is_library),
         "scope_collections": sum(1 for e in entries if not e.is_library),
         "last_run": db.execute("SELECT * FROM runs ORDER BY id DESC LIMIT 1").fetchone(),
     }
@@ -42,7 +41,7 @@ def dashboard_recap(request: Request, db: sqlite3.Connection = Depends(get_db)):
         "partials/dashboard_recap.html",
         server_name=server_name,
         version=version,
-        movies=sum(lib.size for lib in libraries if lib.type == "movie"),
-        shows=sum(lib.size for lib in libraries if lib.type == "show"),
+        movies=sum(lib.size for lib in plex.visible(db, libraries) if lib.type == "movie"),
+        shows=sum(lib.size for lib in plex.visible(db, libraries) if lib.type == "show"),
         **context,
     )

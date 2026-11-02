@@ -29,28 +29,9 @@ def add_source(app):
         return save_source(conn, PosterSource(None, "PP", "https://p.test/{imdb_id}.jpg?k=1"))
 
 
-def test_scope_page_lists_libraries(client, server):
-    html = client.get("/posters/scope/libraries").text
-    assert "Movies" in html and "Shows" in html and "Music" not in html
-    assert "Add a poster service" in client.get("/posters/scope").text
-
-
-def test_toggle_library_and_collection(client, app, server):
-    source_id = add_source(app)
-    html = client.post("/posters/scope/entry", data={"library_key": "1", "library_title": "Movies", "enabled": "1",
-                                             "count": "6"}).text
-    assert 'class="scope-row on"' in html and "6 titles" in html
-    client.post("/posters/scope/entry", data={"library_key": "1", "library_title": "Movies", "collection_key": "10",
-                                      "collection_title": "Marvel", "enabled": "1", "source_id": str(source_id)})
-    with connection(app.state.db_path) as conn:
-        assert list_scope(conn) == [ScopeEntry("1", "Movies"), ScopeEntry("1", "Movies", "10", "Marvel", source_id)]
-
-    collections = client.get("/posters/scope/libraries/1/collections").text
-    assert "Marvel" in collections and "checked" in collections
-
-    client.post("/posters/scope/entry", data={"library_key": "1", "library_title": "Movies"})
-    with connection(app.state.db_path) as conn:
-        assert [e.collection_key for e in list_scope(conn)] == ["10"]
+def test_scope_page_without_lists(client, server):
+    html = client.get("/posters/scope").text
+    assert "No collection yet" in html and "Add a poster service" in html
 
 
 def run_test(client, app, mode="test", **data):
@@ -65,7 +46,7 @@ def run_test(client, app, mode="test", **data):
 def test_test_sync_needs_scope(client, app, server):
     add_source(app)
     run, items = run_test(client, app)
-    assert run["status"] == "failed" and "Libraries" in run["error"]
+    assert run["status"] == "failed" and "Collections" in run["error"]
 
 
 def test_test_sync_runs(client, app, server):
@@ -88,13 +69,6 @@ def test_test_sync_runs(client, app, server):
     card = client.get("/sync/card").text
     assert "View results" in card and "Run test" in card and "Sync to Plex" in card
     assert any("Test sync done" in line.message for line in app.state.events.tail(50))
-
-
-def test_scope_rows_post_on_their_own(client, server):
-    """Rows sit inside the collections <details>, whose hx-target must not leak into them."""
-    row = client.post("/posters/scope/entry", data={"library_key": "1", "library_title": "Movies", "enabled": "1"}).text
-    assert 'hx-target="this"' in row
-    assert '"disableInheritance": true' in client.get("/posters/scope").text
 
 
 def test_live_sync_uploads_and_remembers(client, app, server, monkeypatch):
