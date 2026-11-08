@@ -26,7 +26,7 @@ from app.web.deps import get_db, render
 
 router = APIRouter()
 
-MISSING_SHOWN = 30
+MISSING_POSTERS = 60  # TMDB lookups per preview for missing titles; the rest show their name
 
 
 FRIENDS_TTL = 300
@@ -268,13 +268,27 @@ def preview(request: Request, form: ListForm = Depends(list_form), db: sqlite3.C
         return render(request, "partials/list_preview.html", indexing=section.title, size=section.totalSize)
 
     result = match(db, form.library_key, section.type, fetched.items)
+    ranked, owned = [], 0
+    for item, rating_key in result.ranked:  # in list order, up to the last title the collection keeps
+        if owned == form.max_items:
+            break
+        ranked.append((item, rating_key))
+        owned += rating_key is not None
+    missing = [item for item, rating_key in ranked if rating_key is None]
     with httpx.Client(follow_redirects=True) as client:
-        missing = sources.add_posters(result.missing[:MISSING_SHOWN], client, get_setting(db, "tmdb.key"))
+        with_posters = iter(sources.add_posters(missing[:MISSING_POSTERS], client, get_setting(db, "tmdb.key"))
+                            + missing[MISSING_POSTERS:])
     seerr = get_setting(db, "seerr.url")
+    tiles = []  # (title, rating key or None when missing, Seerr link)
+    for item, rating_key in ranked:
+        if rating_key is None:
+            item = next(with_posters)
+            tiles.append((item, None, request_url(seerr, item)))
+        else:
+            tiles.append((item, rating_key, None))
     return render(
         request, "partials/list_preview.html", name=form.name or fetched.name, ref=ref, result=result,
-        shown=result.owned[:form.max_items], max_items=form.max_items, library=section.title,
-        missing=[(item, request_url(seerr, item)) for item in missing], has_seerr=bool(seerr),
+        tiles=tiles, kept=owned, missing_shown=len(missing), library=section.title, has_seerr=bool(seerr),
     )
 
 

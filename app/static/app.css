@@ -650,7 +650,9 @@ form .form-step:not(:first-child) { margin-top: 24px; }
 
 .segmented { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; margin-bottom: 16px;
   background: var(--surface-2); border-radius: var(--radius-sm); }
-.segmented input, .chip-radio input { position: absolute; opacity: 0; pointer-events: none; }
+.segmented label, .chip-radio { position: relative; }
+.segmented input, .chip-radio input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0;
+  opacity: 0; pointer-events: none; }
 .segmented span { display: block; padding: 6px 14px; border-radius: var(--radius-sm); cursor: pointer; color: var(--muted); }
 .segmented input:checked + span { background: var(--surface); color: var(--text); box-shadow: 0 0 0 1px var(--border); }
 .segmented input:focus-visible + span, .chip-radio input:focus-visible + span { outline: 2px solid var(--accent); }
@@ -675,7 +677,6 @@ form .form-step:not(:first-child) { margin-top: 24px; }
 
 /* Titles of a list that aren't in Plex */
 
-.preview-subtitle { margin: 24px 0 0; font-size: 14px; }
 .poster-grid .missing .poster img { filter: grayscale(.7); opacity: .7; }
 .poster-placeholder { display: flex; align-items: center; justify-content: center; height: 100%; padding: 8px; color: var(--muted); font-size: 12px; text-align: center; }
 .btn-request { width: 100%; justify-content: center; margin-top: 6px; padding: 4px 8px; font-size: 12px; }

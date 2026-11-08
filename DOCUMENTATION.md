@@ -106,8 +106,8 @@ dashboard). Nothing changes in Plex.
 - **Poster service**: none, the default service or another one. Its titles get their posters right after each
   sync of the list, the first one included. A title in several collections is processed once.
 
-**Preview** shows which titles of the list you have and which are missing, with their posters (from the list,
-or from TMDB when a TMDB key is set). With your Seerr address in **Settings → Seerr** (Overseerr and Jellyseerr
+**Preview** shows the collection in list order, up to its last title. Missing titles are greyed at the spot
+they will take once added, with their posters (from the list, or from TMDB when a TMDB key is set). With your Seerr address in **Settings → Seerr** (Overseerr and Jellyseerr
 work too), each missing title gets a **Request** button that opens its page in Seerr.
 
 ### Tabs
@@ -196,7 +196,7 @@ Everything is set up in the web UI. Only the admin account variables are needed,
 | Tag | What it is |
 |---|---|
 | `latest` | The latest release. |
-| `0.5.0`, `0.5` | A given release. |
+| `0.5.1`, `0.5` | A given release. |
 | `edge` | The latest commit on `main`. May break. |
 
 Images are built for `linux/amd64` and `linux/arm64`.

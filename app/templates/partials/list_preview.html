@@ -18,29 +18,22 @@
     <div><span class="counter-value">{{ result.total }}</span><span class="counter-label">In the list</span></div>
     <div class="c-apply"><span class="counter-value">{{ result.owned | length }}</span><span class="counter-label">In {{ library }}</span></div>
     <div><span class="counter-value">{{ result.missing | length }}</span><span class="counter-label">Missing</span></div>
-    <div><span class="counter-value">{{ shown | length }}</span><span class="counter-label">In the collection</span></div>
+    <div><span class="counter-value">{{ kept }}</span><span class="counter-label">In the collection</span></div>
   </div>
   {% if result.other_kind %}<p class="muted small" style="margin-top:12px">{{ result.other_kind }} titles of the other type (movies or shows) are left out.</p>{% endif %}
 
-  {% if shown %}
+  {% if tiles %}
+  {% if missing_shown %}<p class="muted small" style="margin-top:12px">Greyed titles are missing from {{ library }}:
+    once added, they show up at that spot.{% if not has_seerr %} Add your Seerr address in
+    <a href="/settings/seerr">Settings → Seerr</a> to request them.{% endif %}</p>{% endif %}
   <div class="poster-grid">
-    {% for item, rating_key in shown %}
+    {% for item, rating_key, request in tiles %}
+    {% if rating_key %}
     <figure>
       <div class="poster"><img src="/plex/image?path={{ ('/library/metadata/%s/thumb' % rating_key) | urlencode }}&w=200&h=300" alt="" loading="lazy"></div>
       <figcaption>{{ item.title }}{% if item.year %} <span class="muted">({{ item.year }})</span>{% endif %}</figcaption>
     </figure>
-    {% endfor %}
-  </div>
-  {% else %}
-  <p class="muted" style="margin-top:16px">None of these titles are in {{ library }}: the collection would be empty.</p>
-  {% endif %}
-
-  {% if missing %}
-  <h3 class="preview-subtitle">Missing from {{ library }} ({{ result.missing | length }})</h3>
-  {% if not has_seerr %}<p class="muted small" style="margin:4px 0 0">Add your Seerr address in
-    <a href="/settings/seerr">Settings → Seerr</a> to request them.</p>{% endif %}
-  <div class="poster-grid">
-    {% for item, request in missing %}
+    {% else %}
     <figure class="missing">
       <div class="poster">
         {% if item.poster %}<img src="{{ item.poster }}" alt="" loading="lazy" referrerpolicy="no-referrer">
@@ -49,11 +42,12 @@
       <figcaption>{{ item.title }}{% if item.year %} <span class="muted">({{ item.year }})</span>{% endif %}</figcaption>
       {% if request %}<a class="btn btn-request" href="{{ request }}" target="_blank" rel="noopener">{{ icon('plus', 14) }}Request</a>{% endif %}
     </figure>
+    {% endif %}
     {% endfor %}
   </div>
-  {% if result.missing | length > missing | length %}
-  <p class="muted small" style="margin-top:12px">And {{ result.missing | length - missing | length }} more.</p>
   {% endif %}
+  {% if not kept %}
+  <p class="muted" style="margin-top:16px">None of these titles are in {{ library }}: the collection would be empty.</p>
   {% endif %}
   {% endif %}
 </section>

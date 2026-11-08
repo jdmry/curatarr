@@ -11,6 +11,7 @@ from app.plex.guid_index import find
 class Match:
     owned: list[tuple[ListItem, str]] = field(default_factory=list)  # (title, rating key), in list order
     missing: list[ListItem] = field(default_factory=list)
+    ranked: list[tuple[ListItem, str | None]] = field(default_factory=list)  # both, in list order (None = missing)
     other_kind: int = 0  # shows in a movie library or the reverse, left out
 
     @property
@@ -28,7 +29,9 @@ def match(conn: sqlite3.Connection, library_key: str, library_type: str, items: 
         rating_key = next((found[guid] for guid in item.guids if guid in found), None)
         if rating_key is None:
             result.missing.append(item)
+            result.ranked.append((item, None))
         elif rating_key not in seen:
             seen.add(rating_key)
             result.owned.append((item, rating_key))
+            result.ranked.append((item, rating_key))
     return result

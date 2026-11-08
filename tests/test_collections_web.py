@@ -44,10 +44,12 @@ def test_empty_lists_page(client, server):
 def test_preview(client, app, server):
     indexed(app, server)
     html = client.post("/collections/lists/preview", data=FORM).text
-    assert "Top movies" in html and "Missing from Movies (1)" in html and "Nope" in html
-    assert html.index("/library/metadata/2/thumb") < html.index("/library/metadata/1/thumb")
+    assert "Top movies" in html and "Greyed titles are missing from Movies" in html
+    heat, nope, dune = (html.index(s) for s in ("/library/metadata/2/thumb", 'class="missing"', "/library/metadata/1/thumb"))
+    assert heat < nope < dune  # one grid, in list order
     one = client.post("/collections/lists/preview", data={**FORM, "max_items": "1"}).text
-    assert "/library/metadata/1/thumb" not in one
+    assert "/library/metadata/2/thumb" in one and "/library/metadata/1/thumb" not in one
+    assert "Nope" not in one  # past the last title the collection keeps
     assert "Settings → Seerr" in html and "Request" not in html
 
 
