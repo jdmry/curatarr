@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Seerr · Settings · {{ app_name }}{% endblock %}
+{% block content %}
+{% with tab = "seerr" %}{% include "partials/settings_header.html" %}{% endwith %}
+
+<section class="card">
+  <div class="card-header">
+    <h2 class="card-title">{{ icon('plus') }}Seerr</h2>
+    {% if url %}<span class="badge ok"><span class="dot"></span>Configured</span>
+    {% else %}<span class="badge"><span class="dot"></span>Not configured</span>{% endif %}
+  </div>
+  <p class="muted" style="margin:0 0 16px">With your Seerr address (Overseerr and Jellyseerr work too), the titles
+    of a list that aren't in Plex get a <strong>Request</strong> button that opens their page in Seerr.</p>
+  {% include "partials/seerr_form.html" %}
+</section>
+{% endblock %}

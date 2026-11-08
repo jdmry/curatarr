@@ -48,6 +48,22 @@ def test_preview(client, app, server):
     assert html.index("/library/metadata/2/thumb") < html.index("/library/metadata/1/thumb")
     one = client.post("/collections/lists/preview", data={**FORM, "max_items": "1"}).text
     assert "/library/metadata/1/thumb" not in one
+    assert "Settings → Seerr" in html and "Request" not in html
+
+
+def test_missing_titles_can_be_requested(client, app, server):
+    indexed(app, server)
+    assert "Saved." in client.post("/settings/seerr", data={"url": "https://seerr.test/"}).text
+    assert "must start with http" in client.post("/settings/seerr", data={"url": "seerr.test"}).text
+    html = client.post("/collections/lists/preview", data=FORM).text
+    assert 'href="https://seerr.test/search?query=Nope"' in html and "Settings → Seerr" not in html
+
+    nope = ListItem("movie", "Nope", tmdb_id="762504")
+    assert collections.request_url("https://seerr.test", nope) == "https://seerr.test/movie/762504"
+    show = ListItem("show", "Dark", tmdb_id="70523")
+    assert collections.request_url("https://seerr.test", show) == "https://seerr.test/tv/70523"
+    assert collections.request_url(None, show) is None
+    assert 'value="https://seerr.test"' in client.get("/settings/seerr").text
 
 
 def test_preview_errors(client, server):

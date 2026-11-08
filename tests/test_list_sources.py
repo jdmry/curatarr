@@ -176,3 +176,39 @@ def test_stremio_hides_its_configuration():
     with pytest.raises(ListError) as error:
         fetch(parse(f"{MANIFEST}#movie/nfx"), client(down))
     assert "c0nf1g" not in str(error.value)
+
+
+def test_posters_from_the_sources():
+    assert sources._tmdb_item({"id": 1, "title": "A", "poster_path": "/a.jpg"}, "movie").poster == \
+        "https://image.tmdb.org/t/p/w342/a.jpg"
+    meta = {"id": "tt1", "name": "A", "poster": "https://images.metahub.space/poster/small/tt1/img"}
+    assert sources._stremio_item(meta, "movie").poster == meta["poster"]
+    private = {**meta, "poster": "https://addon.test/SECRET123/poster/tt1.jpg"}
+    assert sources._stremio_item(private, "movie", ["SECRET123"]).poster is None
+    assert sources._mdblist_item({"title": "A", "poster": "http://insecure.test/a.jpg"}).poster is None
+
+
+def test_add_posters_from_tmdb(monkeypatch):
+    monkeypatch.setattr(sources, "_poster_cache", {})
+    calls = []
+
+    def handler(request):
+        calls.append(request.url.path)
+        if request.url.path == "/3/movie/5":
+            return httpx.Response(200, json={"id": 5, "poster_path": "/five.jpg"})
+        if request.url.path == "/3/find/tt9":
+            assert request.url.params["external_source"] == "imdb_id"
+            return httpx.Response(200, json={"tv_results": [{"id": 90, "poster_path": "/nine.jpg"}]})
+        return httpx.Response(404)
+
+    items = [ListItem("movie", "Has one", poster="https://x.test/p.jpg"), ListItem("movie", "Five", tmdb_id="5"),
+             ListItem("show", "Nine", imdb_id="tt9"), ListItem("movie", "Gone", tmdb_id="404"), ListItem("movie", "No id")]
+    assert sources.add_posters(items, client(handler), None) == items  # no TMDB key: nothing asked
+    found = sources.add_posters(items, client(handler), "key")
+    assert [i.poster for i in found] == ["https://x.test/p.jpg", "https://image.tmdb.org/t/p/w342/five.jpg",
+                                         "https://image.tmdb.org/t/p/w342/nine.jpg", None, None]
+    assert found[2].tmdb_id == "90"
+    calls.clear()
+    sources.add_posters(items, client(handler), "key")
+    assert calls == ["/3/movie/404"]  # the others come from the cache
+

@@ -11,8 +11,8 @@
 </div>
 
 - **Collections**: turn MDBList, TMDB or Stremio addon lists into Plex collections, on your Home or in
-  Recommended, for everyone, only you, or one friend. Keep them fresh on a schedule, reorder your Home rows
-  and clean up old collections.
+  Recommended, for everyone, only you, or one friend. Keep them fresh on a schedule, request what's missing in
+  Seerr, reorder your Home rows and clean up old collections.
 - **Posters**: give each collection posters from PostersPlus, RPDB or any image service, with quality badges
   read from your files, sent after each sync. Or do one title by hand.
 - **Safe**: a login protects every page, and a test mode shows what would change before anything is sent to Plex.

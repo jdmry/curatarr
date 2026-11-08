@@ -96,6 +96,22 @@ def save_tmdb(request: Request, key: str = Form(""), db: sqlite3.Connection = De
     return render(request, "partials/tmdb_check.html", error=error)
 
 
+@router.get("/settings/seerr")
+def seerr_page(request: Request, db: sqlite3.Connection = Depends(get_db)):
+    return render(request, "settings/seerr.html", active="settings", page="settings/seerr",
+                  url=get_setting(db, "seerr.url") or "")
+
+
+@router.post("/settings/seerr")
+def save_seerr(request: Request, url: str = Form(""), db: sqlite3.Connection = Depends(get_db)):
+    """An empty field turns the Request buttons off."""
+    url = url.strip().rstrip("/")
+    if url and not url.startswith(("http://", "https://")):
+        return render(request, "partials/seerr_form.html", url=url, error="The address must start with http:// or https://.")
+    set_setting(db, "seerr.url", url or None)
+    return render(request, "partials/seerr_form.html", url=url, saved=True)
+
+
 @router.get("/settings/mdblist")
 def mdblist_page(request: Request, db: sqlite3.Connection = Depends(get_db)):
     return render(request, "settings/mdblist.html", active="settings", page="settings/mdblist",

@@ -36,12 +36,24 @@
   {% endif %}
 
   {% if missing %}
-  <details class="disclosure" style="margin-top:16px">
-    <summary>Missing from {{ library }} ({{ result.missing | length }})</summary>
-    <ul class="plain-list">
-      {% for item in missing %}<li>{{ item.title }}{% if item.year %} <span class="muted">({{ item.year }})</span>{% endif %}</li>{% endfor %}
-    </ul>
-  </details>
+  <h3 class="preview-subtitle">Missing from {{ library }} ({{ result.missing | length }})</h3>
+  {% if not has_seerr %}<p class="muted small" style="margin:4px 0 0">Add your Seerr address in
+    <a href="/settings/seerr">Settings → Seerr</a> to request them.</p>{% endif %}
+  <div class="poster-grid">
+    {% for item, request in missing %}
+    <figure class="missing">
+      <div class="poster">
+        {% if item.poster %}<img src="{{ item.poster }}" alt="" loading="lazy" referrerpolicy="no-referrer">
+        {% else %}<div class="poster-placeholder">{{ item.title }}</div>{% endif %}
+      </div>
+      <figcaption>{{ item.title }}{% if item.year %} <span class="muted">({{ item.year }})</span>{% endif %}</figcaption>
+      {% if request %}<a class="btn btn-request" href="{{ request }}" target="_blank" rel="noopener">{{ icon('plus', 14) }}Request</a>{% endif %}
+    </figure>
+    {% endfor %}
+  </div>
+  {% if result.missing | length > missing | length %}
+  <p class="muted small" style="margin-top:12px">And {{ result.missing | length - missing | length }} more.</p>
+  {% endif %}
   {% endif %}
   {% endif %}
 </section>

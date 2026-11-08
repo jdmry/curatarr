@@ -2,6 +2,7 @@
 
 import sqlite3
 import time
+from urllib.parse import quote
 from dataclasses import dataclass
 
 import httpx
@@ -267,11 +268,23 @@ def preview(request: Request, form: ListForm = Depends(list_form), db: sqlite3.C
         return render(request, "partials/list_preview.html", indexing=section.title, size=section.totalSize)
 
     result = match(db, form.library_key, section.type, fetched.items)
+    with httpx.Client(follow_redirects=True) as client:
+        missing = sources.add_posters(result.missing[:MISSING_SHOWN], client, get_setting(db, "tmdb.key"))
+    seerr = get_setting(db, "seerr.url")
     return render(
         request, "partials/list_preview.html", name=form.name or fetched.name, ref=ref, result=result,
         shown=result.owned[:form.max_items], max_items=form.max_items, library=section.title,
-        missing=result.missing[:MISSING_SHOWN],
+        missing=[(item, request_url(seerr, item)) for item in missing], has_seerr=bool(seerr),
     )
+
+
+def request_url(seerr: str | None, item: sources.ListItem) -> str | None:
+    """The title's page in Seerr (Overseerr and Jellyseerr alike), or a search when its TMDB id is unknown."""
+    if not seerr:
+        return None
+    if item.tmdb_id:
+        return f"{seerr}/{'movie' if item.kind == 'movie' else 'tv'}/{item.tmdb_id}"
+    return f"{seerr}/search?query={quote(item.title)}"
 
 
 def _save(request: Request, db: sqlite3.Connection, list_id: int | None, form: ListForm):

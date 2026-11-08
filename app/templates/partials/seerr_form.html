@@ -1,0 +1,10 @@
+<form id="seerr-form" hx-post="/settings/seerr" hx-target="this" hx-swap="outerHTML">
+  {% if error %}<div class="alert error" style="margin-bottom:16px">{{ icon('x') }}<div>{{ error }}</div></div>{% endif %}
+  {% if saved %}<div class="alert ok" style="margin-bottom:16px">{{ icon('check') }}<div>{{ 'Saved.' if url else 'Removed: no Request buttons.' }}</div></div>{% endif %}
+  <label class="field">
+    <span class="field-label">Seerr address</span>
+    <input name="url" value="{{ url }}" placeholder="https://requests.example.com">
+    <span class="field-help">The address you open Seerr at in your browser. Leave empty to turn it off.</span>
+  </label>
+  <div class="actions"><button class="btn btn-primary" type="submit">{{ icon('check', 16) }}Save</button></div>
+</form>

@@ -672,3 +672,10 @@ form .form-step:not(:first-child) { margin-top: 24px; }
 .auth-title { margin: 0 0 16px; font-size: 18px; }
 .auth .btn { width: 100%; justify-content: center; }
 .auth .alert + p { margin-top: 12px; }
+
+/* Titles of a list that aren't in Plex */
+
+.preview-subtitle { margin: 24px 0 0; font-size: 14px; }
+.poster-grid .missing .poster img { filter: grayscale(.7); opacity: .7; }
+.poster-placeholder { display: flex; align-items: center; justify-content: center; height: 100%; padding: 8px; color: var(--muted); font-size: 12px; text-align: center; }
+.btn-request { width: 100%; justify-content: center; margin-top: 6px; padding: 4px 8px; font-size: 12px; }

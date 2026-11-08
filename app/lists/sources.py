@@ -1,7 +1,8 @@
 """Where lists come from: paste a MDBList or TMDB URL, get the titles in order."""
 
 import re
-from dataclasses import dataclass, field
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass, field, replace
 from urllib.parse import quote, urlparse
 
 import httpx
@@ -9,6 +10,7 @@ import httpx
 from app.secrets import MASK, mask
 
 TMDB_API = "https://api.themoviedb.org/3"
+TMDB_IMAGES = "https://image.tmdb.org/t/p/w342"
 MDBLIST_API = "https://api.mdblist.com"
 # A collection holds at most 500 titles: one page of list items is enough.
 MDBLIST_ITEMS = 1000
@@ -67,6 +69,7 @@ class ListItem:
     tmdb_id: str | None = None
     imdb_id: str | None = None
     tvdb_id: str | None = None
+    poster: str | None = None  # an image URL from the list's source, shown for titles not in Plex
 
     @property
     def guids(self) -> list[str]:
@@ -166,6 +169,7 @@ def _mdblist_item(row: dict) -> ListItem:
         tmdb_id=_str(ids.get("tmdb") or row.get("id")),
         imdb_id=_str(ids.get("imdb") or row.get("imdb_id")),
         tvdb_id=_str(ids.get("tvdb") or row.get("tvdb_id") or row.get("tvdbid")),
+        poster=_image(row.get("poster")),
     )
 
 
@@ -227,8 +231,11 @@ def stremio_catalogs(client: httpx.Client, manifest_url: str) -> list[tuple[str,
     ]
 
 
-def _stremio_item(meta: dict, kind: str) -> ListItem:
+def _stremio_item(meta: dict, kind: str, secrets: list[str] = ()) -> ListItem:
     meta_id = str(meta.get("id") or "")
+    poster = _image(meta.get("poster"))
+    if poster and any(secret in poster for secret in secrets):
+        poster = None  # served by the addon with its configuration in the path
     return ListItem(
         kind=kind,
         title=meta.get("name") or "",
@@ -236,6 +243,7 @@ def _stremio_item(meta: dict, kind: str) -> ListItem:
         tmdb_id=_str(meta.get("moviedb_id")),
         imdb_id=_str(meta.get("imdb_id")) or (meta_id if meta_id.startswith("tt") else None),
         tvdb_id=_str(meta.get("tvdb_id")),
+        poster=poster,
     )
 
 
@@ -257,7 +265,7 @@ def _fetch_stremio(ref: ListRef, client: httpx.Client) -> FetchedList:
         if not metas or metas[0].get("id") == previous_first:
             break
         previous_first = metas[0].get("id")
-        items += [_stremio_item(meta, STREMIO_TYPES[stremio_type]) for meta in metas]
+        items += [_stremio_item(meta, STREMIO_TYPES[stremio_type], secrets) for meta in metas]
         if len(items) >= MAX_TITLES:
             break
     return FetchedList(names.get(catalog, catalog_id), list(dict.fromkeys(items)))
@@ -278,7 +286,52 @@ def _tmdb_item(row: dict, default_kind: str) -> ListItem:
         title=row.get("title") or row.get("name") or "",
         year=_year(row.get("release_date") or row.get("first_air_date")),
         tmdb_id=_str(row.get("id")),
+        poster=f"{TMDB_IMAGES}{row['poster_path']}" if row.get("poster_path") else None,
     )
+
+
+def _image(value) -> str | None:
+    return value if isinstance(value, str) and value.startswith("https://") else None
+
+
+_poster_cache: dict[tuple[str, str], tuple[str | None, str | None]] = {}
+POSTER_CACHE_SIZE = 5000
+
+
+def add_posters(items: list[ListItem], client: httpx.Client, tmdb_key: str | None) -> list[ListItem]:
+    """Posters (and TMDB ids) from TMDB for the titles whose source sent none. Needs a TMDB key."""
+    if not tmdb_key:
+        return items
+    auth = tmdb_auth(tmdb_key)
+
+    def lookup(item: ListItem) -> ListItem:
+        if item.poster or not (item.tmdb_id or item.imdb_id):
+            return item
+        media = "movie" if item.kind == "movie" else "tv"
+        cache_key = (media, item.tmdb_id or item.imdb_id)
+        if cache_key not in _poster_cache:
+            try:
+                if item.tmdb_id:
+                    found = _get(client, f"{TMDB_API}/{media}/{item.tmdb_id}", [tmdb_key], **auth)
+                else:
+                    results = _get(client, f"{TMDB_API}/find/{item.imdb_id}", [tmdb_key],
+                                   **_with_params(auth, external_source="imdb_id"))
+                    found = (results.get(f"{media}_results") or [{}])[0]
+            except ListError:
+                return item  # not found or TMDB unreachable: no poster, nothing cached
+            path = found.get("poster_path")
+            if len(_poster_cache) >= POSTER_CACHE_SIZE:
+                _poster_cache.clear()
+            _poster_cache[cache_key] = (f"{TMDB_IMAGES}{path}" if path else None, _str(found.get("id")))
+        poster, tmdb_id = _poster_cache[cache_key]
+        return replace(item, poster=poster, tmdb_id=item.tmdb_id or tmdb_id)
+
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        return list(pool.map(lookup, items))
+
+
+def _with_params(auth: dict, **params) -> dict:
+    return {**auth, "params": {**auth.get("params", {}), **params}}
 
 
 def _fetch_tmdb(ref: ListRef, client: httpx.Client, key: str) -> FetchedList:
